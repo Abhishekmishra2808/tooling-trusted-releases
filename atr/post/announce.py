@@ -78,7 +78,7 @@ async def selected(
             get.announce.selected, error=str(e), project_name=project_name, version_name=version_name
         )
 
-    routes_release_finished = get.release.finished  # type: ignore[has-type]
+    routes_release_finished = get.release.finished
     return await session.redirect(
         routes_release_finished,
         success="Preview successfully announced",

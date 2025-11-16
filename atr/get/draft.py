@@ -62,36 +62,3 @@ async def tools(session: web.Committer, project_name: str, version_name: str, fi
         format_file_size=util.format_file_size,
         empty_form=await forms.Empty.create_form(),
     )
-
-
-# TODO: Should we deprecate this and ensure compose covers it all?
-# If we did that, we'd lose the exhaustive use of the abstraction
-@get.committer("/draft/view/<project_name>/<version_name>")
-async def view(session: web.Committer, project_name: str, version_name: str) -> web.WerkzeugResponse | str:
-    """View all the files in the rsync upload directory for a release."""
-    await session.check_access(project_name)
-
-    release = await session.release(project_name, version_name)
-
-    # Convert async generator to list
-    revision_number = release.latest_revision_number
-    file_stats = []
-    if revision_number is not None:
-        file_stats = [
-            stat
-            async for stat in util.content_list(util.get_unfinished_dir(), project_name, version_name, revision_number)
-        ]
-    # Sort the files by FileStat.path
-    file_stats.sort(key=lambda fs: fs.path)
-
-    return await template.render(
-        # TODO: Move to somewhere appropriate
-        "phase-view.html",
-        file_stats=file_stats,
-        release=release,
-        format_datetime=util.format_datetime,
-        format_file_size=util.format_file_size,
-        format_permissions=util.format_permissions,
-        phase="release candidate draft",
-        phase_key="draft",
-    )

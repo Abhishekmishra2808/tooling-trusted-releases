@@ -35,7 +35,7 @@ import atr.form as form
 import atr.get.announce as announce
 import atr.get.distribution as distribution
 import atr.get.download as download
-import atr.get.preview as preview
+import atr.get.file as file
 import atr.get.revisions as revisions
 import atr.get.root as root
 import atr.htm as htm
@@ -412,7 +412,7 @@ def _render_release_card(release: sql.Release) -> htm.Element:
                     ".btn.btn-secondary.me-2",
                     title=f"Show files for {release.name}",
                     href=util.as_url(
-                        preview.view,
+                        file.selected,
                         project_name=release.project.name,
                         version_name=release.version,
                     ),

@@ -28,9 +28,7 @@ import atr.db.interaction as interaction
 import atr.form as form
 import atr.forms as forms
 import atr.get.committees as committees
-import atr.get.draft as draft
-import atr.get.preview as preview
-import atr.get.release as release
+import atr.get.file as file
 import atr.get.start as start
 import atr.htm as htm
 import atr.models.sql as sql
@@ -41,7 +39,6 @@ import atr.template as template
 import atr.user as user
 import atr.util as util
 import atr.web as web
-from atr.get import candidate
 
 
 @get.committer("/project/add/<committee_name>")
@@ -449,7 +446,7 @@ async def _render_releases_sections(
             draft_buttons.append(
                 htm.a(
                     ".btn.btn-sm.btn-outline-secondary.py-2.px-3",
-                    href=util.as_url(draft.view, project_name=project.name, version_name=drf.version),
+                    href=util.as_url(file.selected, project_name=project.name, version_name=drf.version),
                     title=f"View draft {project.name} {drf.version}",
                 )[
                     f"{project.name} {drf.version} ",
@@ -466,7 +463,7 @@ async def _render_releases_sections(
             candidate_buttons.append(
                 htm.a(
                     ".btn.btn-sm.btn-outline-info.py-2.px-3",
-                    href=util.as_url(candidate.view, project_name=project.name, version_name=cnd.version),
+                    href=util.as_url(file.selected, project_name=project.name, version_name=cnd.version),
                     title=f"View candidate {project.name} {cnd.version}",
                 )[
                     f"{project.name} {cnd.version} ",
@@ -483,7 +480,7 @@ async def _render_releases_sections(
             preview_buttons.append(
                 htm.a(
                     ".btn.btn-sm.btn-outline-warning.py-2.px-3",
-                    href=util.as_url(preview.view, project_name=project.name, version_name=prv.version),
+                    href=util.as_url(file.selected, project_name=project.name, version_name=prv.version),
                     title=f"View preview {project.name} {prv.version}",
                 )[
                     f"{project.name} {prv.version} ",
@@ -500,7 +497,7 @@ async def _render_releases_sections(
             release_buttons.append(
                 htm.a(
                     ".btn.btn-sm.btn-outline-success.py-2.px-3",
-                    href=util.as_url(release.view, project_name=project.name, version_name=rel.version),
+                    href=util.as_url(file.selected, project_name=project.name, version_name=rel.version),
                     title=f"View release {project.name} {rel.version}",
                 )[
                     f"{project.name} {rel.version} ",
