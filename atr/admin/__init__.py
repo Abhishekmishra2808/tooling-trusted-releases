@@ -528,9 +528,10 @@ async def _keys_update(session: web.Committer) -> str | web.WerkzeugResponse | t
             "category": "success",
         }, 200
     except Exception as e:
-        log.exception("Failed to start key update process")
+        detail = _format_exception_location(e)
+        log.exception("Failed to start key update process: %s", detail)
         return {
-            "message": f"Failed to update keys: {e!s}",
+            "message": f"Failed to update keys: {detail}",
             "category": "error",
         }, 200
 
@@ -543,6 +544,21 @@ async def ldap_get(session: web.Committer) -> str:
 @admin.post("/ldap/")
 async def ldap_post(session: web.Committer) -> str:
     return await _ldap(session)
+
+
+def _format_exception_location(exc: BaseException) -> str:
+    tb = exc.__traceback__
+    last_tb = None
+    while tb is not None:
+        last_tb = tb
+        tb = tb.tb_next
+    if last_tb is None:
+        return f"{type(exc).__name__}: {exc}"
+    frame = last_tb.tb_frame
+    filename = pathlib.Path(frame.f_code.co_filename).name
+    lineno = last_tb.tb_lineno
+    func = frame.f_code.co_name
+    return f"{type(exc).__name__} at {filename}:{lineno} in {func}: {exc}"
 
 
 async def _ldap(session: web.Committer) -> str:
