@@ -267,6 +267,10 @@ def _files_check_core_logic_license(archive: tarzip.Archive, member: tarzip.Memb
 
     expected_lines = _normal_whitespace(expected_lines)
     actual_lines = _normal_whitespace(actual_lines)
+    # Allow extra lines at the bottom of the license
+    # This could invalidate the license, but we cannot check that automatically
+    # if len(actual_lines) > len(expected_lines):
+    actual_lines = actual_lines[: len(expected_lines)]
     if expected_lines != actual_lines:
         # TODO: Only show a contextual diff, not the full diff
         diff = difflib.ndiff(expected_lines, actual_lines)
