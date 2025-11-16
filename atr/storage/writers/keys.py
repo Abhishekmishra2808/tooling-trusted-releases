@@ -493,7 +493,10 @@ class CommitteeParticipant(FoundationCommitter):
             tmpfile.write(key_block.encode())
             tmpfile.flush()
             keyring = pgpy.PGPKeyring()
-            fingerprints = keyring.load(tmpfile.name)
+            try:
+                fingerprints = keyring.load(tmpfile.name)
+            except StopIteration as e:
+                raise ValueError(f"Error loading OpenPGP key block: {e}") from e
             key_list = []
             for fingerprint in fingerprints:
                 try:
