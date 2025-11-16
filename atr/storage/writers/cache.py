@@ -39,7 +39,7 @@ class GeneralPublic:
         self.__data = data
         self.__asf_uid = write.authorisation.asf_uid
 
-    async def get_message_archive_url(self, task_mid: str | None) -> str | None:
+    async def get_message_archive_url(self, task_mid: str | None, recipient: str | None = None) -> str | None:
         if task_mid is None:
             return None
         if "@" not in task_mid:
@@ -52,7 +52,7 @@ class GeneralPublic:
         if url is not None:
             return url
 
-        url = await util.task_archive_url(task_mid)
+        url = await util.task_archive_url(task_mid, recipient)
         if url is not None:
             await self.__data.ns_text_set(
                 "mid-url-cache",

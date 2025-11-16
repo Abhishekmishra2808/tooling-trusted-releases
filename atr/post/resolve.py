@@ -98,10 +98,11 @@ async def _tabulate(session: web.Committer, project_name: str, version_name: str
     latest_vote_task = await interaction.release_latest_vote_task(release)
     if latest_vote_task is not None:
         task_mid = interaction.task_mid_get(latest_vote_task)
+        task_recipient = interaction.task_recipient_get(latest_vote_task)
         if task_mid:
             async with storage.write(session) as write:
                 wagp = write.as_general_public()
-                archive_url = await wagp.cache.get_message_archive_url(task_mid)
+                archive_url = await wagp.cache.get_message_archive_url(task_mid, task_recipient)
 
     if archive_url:
         thread_id = archive_url.split("/")[-1]

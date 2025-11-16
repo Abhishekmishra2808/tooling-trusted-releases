@@ -80,9 +80,10 @@ async def selected(session: web.Committer | None, project_name: str, version_nam
 
         # Move task_mid_get here?
         task_mid = interaction.task_mid_get(latest_vote_task)
+        task_recipient = interaction.task_recipient_get(latest_vote_task)
         async with storage.write(session) as write:
             wagp = write.as_general_public()
-            archive_url = await wagp.cache.get_message_archive_url(task_mid)
+            archive_url = await wagp.cache.get_message_archive_url(task_mid, task_recipient)
 
     resolve_form = None
     if can_resolve:

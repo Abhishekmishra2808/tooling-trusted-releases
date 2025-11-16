@@ -350,6 +350,13 @@ def task_mid_get(latest_vote_task: sql.Task) -> str | None:
     return result.mid
 
 
+def task_recipient_get(latest_vote_task: sql.Task) -> str | None:
+    result = latest_vote_task.result
+    if not isinstance(result, results.VoteInitiate):
+        return None
+    return result.email_to
+
+
 async def tasks_ongoing(project_name: str, version_name: str, revision_number: str | None = None) -> int:
     tasks = sqlmodel.select(sqlalchemy.func.count()).select_from(sql.Task)
     async with db.session() as data:

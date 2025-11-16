@@ -1252,10 +1252,11 @@ async def vote_tabulate(data: models.api.VoteTabulateArgs) -> DictResponse:
     if latest_vote_task is None:
         raise exceptions.NotFound("No vote task found")
     task_mid = interaction.task_mid_get(latest_vote_task)
+    task_recipient = interaction.task_recipient_get(latest_vote_task)
 
     async with storage.write() as write:
         wagp = write.as_general_public()
-        archive_url = await wagp.cache.get_message_archive_url(task_mid)
+        archive_url = await wagp.cache.get_message_archive_url(task_mid, task_recipient)
     if archive_url is None:
         raise exceptions.NotFound("No archive URL found")
 

@@ -830,13 +830,12 @@ def static_url(filename: str) -> str:
     return quart.url_for("static", filename=filename)
 
 
-async def task_archive_url(task_mid: str) -> str | None:
+async def task_archive_url(task_mid: str, recipient: str | None = None) -> str | None:
     if "@" not in task_mid:
         return None
 
-    # TODO: This List ID will be dynamic when we allow posting to arbitrary lists
-    # lid = "user-tests.tooling.apache.org"
-    lid = USER_TESTS_ADDRESS.replace("@", ".")
+    recipient_address = recipient or USER_TESTS_ADDRESS
+    lid = recipient_address.replace("@", ".")
     url = f"https://lists.apache.org/api/email.json?id=%3C{task_mid}%3E&listid=%3C{lid}%3E"
     try:
         async with aiohttp.ClientSession() as session:

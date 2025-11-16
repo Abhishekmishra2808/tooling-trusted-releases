@@ -301,7 +301,8 @@ class CommitteeMember(CommitteeParticipant):
             # Then we automatically start the Incubator PMC vote
             # TODO: Note on the resolve vote page that resolving the Project PPMC vote starts the Incubator PMC vote
             task_mid = interaction.task_mid_get(latest_vote_task)
-            archive_url = await self.__write_as.cache.get_message_archive_url(task_mid)
+            task_recipient = interaction.task_recipient_get(latest_vote_task)
+            archive_url = await self.__write_as.cache.get_message_archive_url(task_mid, task_recipient)
             if archive_url is None:
                 raise ValueError("No archive URL found for podling vote")
             thread_id = archive_url.split("/")[-1]
