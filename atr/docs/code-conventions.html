@@ -7,6 +7,7 @@
 <li><a href="#python-code">Python code</a></li>
 <li><a href="#html">HTML</a></li>
 <li><a href="#markdown">Markdown</a></li>
+<li><a href="#javascript">JavaScript</a></li>
 </ul>
 <h2 id="python-code">Python code</h2>
 <h3 id="follow-pep-8-rules-by-default">Follow PEP 8 rules by default</h3>
@@ -56,7 +57,7 @@ def process_data(data):
 </ul>
 <p>Scripts are explicitly <em>not</em> an exception. Underscores should be used to prefix private interfaces in scripts for consistency, e.g. so that linters don't need to carry exceptions, and to ease potential migration to modules.</p>
 <h3 id="avoid-nested-functions">Avoid nested functions</h3>
-<p>All function definitions should be at the top level. This is not a hard rule, but should only be broken when absolutely necessary.</p>
+<p>Function definitions should be at the top level. This is not a hard rule, but should only be broken when absolutely necessary.</p>
 <h3 id="use-uppercase-for-top-level-constants">Use UPPERCASE for top level constants</h3>
 <p>Define top level constants using <code>UPPERCASE</code> letters. Don't forget to apply an underscore prefix to constants which are private to their module.</p>
 <p>Do not use uppercase for constants within functions and methods.</p>
@@ -128,64 +129,8 @@ def example() -&gt; List[Optional[str]]:
 <p>Do not name interfaces with the same identifier as their containing module. For example, in a module named <code>example</code>, the function names <code>example</code> and <code>example_function</code> are prohibited.</p>
 <h3 id="keep-modules-small-and-focused">Keep modules small and focused</h3>
 <p>Maintain modules with a reasonable number of interfaces. Though no strict limits are enforced, modules containing numerous classes, constants, or functions should be considered for logical subdivision. Exceptions may be made when closely related functionality necessitates grouping multiple interfaces within a single module.</p>
-<h3 id="name-functions-to-group-related-items-together-alphabetically">Name functions to group related items together alphabetically</h3>
-<p>Modules should, in general, be split into small collections of code items. If this is unavoidable, large groups of functions should be named hierarchically, with the most general category first, followed by increasingly specific details. This makes related functions group together naturally when sorted alphabetically, making code navigation and discovery easier.</p>
-<p><strong>Example</strong>:</p>
-<p>Instead of scattered, hard to find related functions:</p>
-<pre><code class="language-python"># Avoid
-def get_user_from_db():
-def insert_new_record():
-def query_user_settings():
-def update_db_record():
-</code></pre>
-<p>Use hierarchical naming that groups related functionality:</p>
-<pre><code class="language-python"># Prefer
-def db_user_get():
-def db_record_insert():
-def db_user_settings_query():
-def db_record_update():
-</code></pre>
-<p>Note that if the same prefix is used for a large number of functions, that indicates that these functions are a good candidate for splitting off into their own module.</p>
-<p><strong>Example</strong>:</p>
-<p>Another example with license files, the wrong way:</p>
-<pre><code class="language-python"># Avoid
-def check_root_license_file():      # Lost amongst other "check_" functions
-def validate_package_license():     # Separated from other license functions
-def verify_license_files():         # Yet another scattered license function
-</code></pre>
-<p>The right way:</p>
-<pre><code class="language-python"># Prefer
-def license_root_file_check():      # All license related functions
-def license_package_validate():     # will appear together when
-def license_files_verify():         # sorted alphabetically
-</code></pre>
-<p>Note how verbs tend to come last, so that function names now read in an object oriented style, like a module, object, and action.</p>
-<p>While this approach can lead to slightly longer function names, the benefits of improved code organisation and discoverability outweigh the verbosity.</p>
-<p>Classes should always be placed before functions. Private, underscored, classes should be placed after all public classes, and likewise for functions.</p>
-<h3 id="use-numbers-in-function-names-with-long-linear-flow">Use numbers in function names with long, linear flow</h3>
-<p>In some cases, such as testing, computation proceeds through a predictable, linear path and is implemented across many functions. In such cases, use numbers in the function names to make the order clear. One disadvantage to this style is the requirement to renumber all subsequent functions when inserting a new function in the middle.</p>
-<p><strong>Example:</strong></p>
-<pre><code class="language-python">def example_01_start():
-def example_02_prepare():
-def example_03_query():
-def example_04_filter():
-def example_05_process():
-def example_06_clean_up():
-</code></pre>
-<h3 id="give-helper-functions-the-same-prefix-as-their-parent-function">Give helper functions the same prefix as their parent function</h3>
-<p>This makes it easier to find all the functions related to a specific task.</p>
-<p><strong>Example</strong>:</p>
-<p>Instead of:</p>
-<pre><code class="language-python"># Avoid
-def _verify_archive_integrity():
-def _do_something_in_verify_archive_integrity():
-</code></pre>
-<p>Use the same prefix:</p>
-<pre><code class="language-python"># Prefer
-def _verify_archive_integrity():
-def _verify_archive_integrity_do_something():
-</code></pre>
-<p>This makes it easier to find all the functions related to a specific task, and means that they sort together.</p>
+<h3 id="sort-functions-alphabetically">Sort functions alphabetically</h3>
+<p>Wherever possible, the order of functions within each module should be alphabetical by name. Take advantage of this convention by grouping related functions under a common prefix (including grouping helper functions with their caller), and using numbers in the names of functions called in serial order.</p>
 <h3 id="keep-cyclomatic-complexity-below-10">Keep cyclomatic complexity below 10</h3>
 <p>We limit function complexity to a score of 10. If the linter complains, your function is doing too much.</p>
 <p>Cyclomatic complexity counts the number of independent paths through code: more if and else branches, loops, and exception handlers means higher complexity. Complex code is harder to test, maintain, and understand. The easiest way to fix high complexity is usually to refactor a chunk of related logic into a separate helper function.</p>
@@ -228,3 +173,6 @@ if a or b:
 <h2 id="markdown">Markdown</h2>
 <code></code><code></code><h3 id="use-for-emphasis-and-for-strong-emphasis">Use _ for emphasis and ** for strong emphasis</h3>
 <p>Do not use <code>*</code> for emphasis or <code>__</code> for strong emphasis.</p>
+<h2 id="javascript">JavaScript</h2>
+<h3 id="do-not-use-javascript-unless-necessary">Do not use JavaScript unless necessary</h3>
+<p>It is often possible to avoid using JavaScript without significant loss of functionality, but it may require a little more thought. JavaScript is not, however, something to avoid by rote. User experiences can be significantly improved with thoughtful application of JavaScript. Therefore, default to not using JavaScript, but consider how it could be used concisely and with care to improve UX.</p>

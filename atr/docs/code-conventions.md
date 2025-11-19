@@ -11,6 +11,7 @@
 * [Python code](#python-code)
 * [HTML](#html)
 * [Markdown](#markdown)
+* [JavaScript](#javascript)
 
 ## Python code
 
@@ -79,7 +80,7 @@ Scripts are explicitly _not_ an exception. Underscores should be used to prefix 
 
 ### Avoid nested functions
 
-All function definitions should be at the top level. This is not a hard rule, but should only be broken when absolutely necessary.
+Function definitions should be at the top level. This is not a hard rule, but should only be broken when absolutely necessary.
 
 ### Use UPPERCASE for top level constants
 
@@ -189,98 +190,9 @@ Do not name interfaces with the same identifier as their containing module. For 
 
 Maintain modules with a reasonable number of interfaces. Though no strict limits are enforced, modules containing numerous classes, constants, or functions should be considered for logical subdivision. Exceptions may be made when closely related functionality necessitates grouping multiple interfaces within a single module.
 
-### Name functions to group related items together alphabetically
+### Sort functions alphabetically
 
-Modules should, in general, be split into small collections of code items. If this is unavoidable, large groups of functions should be named hierarchically, with the most general category first, followed by increasingly specific details. This makes related functions group together naturally when sorted alphabetically, making code navigation and discovery easier.
-
-**Example**:
-
-Instead of scattered, hard to find related functions:
-
-```python
-# Avoid
-def get_user_from_db():
-def insert_new_record():
-def query_user_settings():
-def update_db_record():
-```
-
-Use hierarchical naming that groups related functionality:
-
-```python
-# Prefer
-def db_user_get():
-def db_record_insert():
-def db_user_settings_query():
-def db_record_update():
-```
-
-Note that if the same prefix is used for a large number of functions, that indicates that these functions are a good candidate for splitting off into their own module.
-
-**Example**:
-
-Another example with license files, the wrong way:
-
-```python
-# Avoid
-def check_root_license_file():      # Lost amongst other "check_" functions
-def validate_package_license():     # Separated from other license functions
-def verify_license_files():         # Yet another scattered license function
-```
-
-The right way:
-
-```python
-# Prefer
-def license_root_file_check():      # All license related functions
-def license_package_validate():     # will appear together when
-def license_files_verify():         # sorted alphabetically
-```
-
-Note how verbs tend to come last, so that function names now read in an object oriented style, like a module, object, and action.
-
-While this approach can lead to slightly longer function names, the benefits of improved code organisation and discoverability outweigh the verbosity.
-
-Classes should always be placed before functions. Private, underscored, classes should be placed after all public classes, and likewise for functions.
-
-### Use numbers in function names with long, linear flow
-
-In some cases, such as testing, computation proceeds through a predictable, linear path and is implemented across many functions. In such cases, use numbers in the function names to make the order clear. One disadvantage to this style is the requirement to renumber all subsequent functions when inserting a new function in the middle.
-
-**Example:**
-
-```python
-def example_01_start():
-def example_02_prepare():
-def example_03_query():
-def example_04_filter():
-def example_05_process():
-def example_06_clean_up():
-```
-
-### Give helper functions the same prefix as their parent function
-
-This makes it easier to find all the functions related to a specific task.
-
-**Example**:
-
-Instead of:
-
-```python
-# Avoid
-def _verify_archive_integrity():
-def _do_something_in_verify_archive_integrity():
-```
-
-Use the same prefix:
-
-```python
-# Prefer
-def _verify_archive_integrity():
-def _verify_archive_integrity_do_something():
-```
-
-This makes it easier to find all the functions related to a specific task, and means that they sort together.
+Wherever possible, the order of functions within each module should be alphabetical by name. Take advantage of this convention by grouping related functions under a common prefix (including grouping helper functions with their caller), and using numbers in the names of functions called in serial order.
 
 ### Keep cyclomatic complexity below 10
 
@@ -327,7 +239,6 @@ if a or b:
 
 Place comments on dedicated lines preceding the relevant code block. Comments at the ends of lines are strictly reserved for linter or type checker directives. This convention enhances code scannability for such directives. General comments must not appear at the end of code lines. Keep comments concise, using sentence case without terminal punctuation. Each sentence forming a comment must occupy its own line.
 
-
 ### Prefer explicit checks over `assert`
 
 We do not use `assert`. If you need to guard against invalid states or inputs, use standard `if` checks and raise appropriate exceptions. If you need to help type checkers understand the type of a variable within a specific code block, in other words if you need to narrow a type, then use `if isinstance(...)` or `if not isinstance(...)` as appropriate.
@@ -351,3 +262,9 @@ We use Bootstrap classes for style, and avoid custom classes unless absolutely n
 ### Use `_` for emphasis and `**` for strong emphasis
 
 Do not use `*` for emphasis or `__` for strong emphasis.
+
+## JavaScript
+
+### Do not use JavaScript unless necessary
+
+It is often possible to avoid using JavaScript without significant loss of functionality, but it may require a little more thought. JavaScript is not, however, something to avoid by rote. User experiences can be significantly improved with thoughtful application of JavaScript. Therefore, default to not using JavaScript, but consider how it could be used concisely and with care to improve UX.
