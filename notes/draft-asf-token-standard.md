@@ -1,6 +1,6 @@
-[DRAFT STANDARD]
-
 # ASF standard for scannable secret tokens
+
+[DRAFT STANDARD]
 
 **NOTE: This is an ASF Tooling proposal only. This is not ASF policy.**
 

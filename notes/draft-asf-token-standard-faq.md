@@ -58,7 +58,7 @@ A. This was for GitHub compatibility, but only shifts the question to why GitHub
 
 A quick experiment, however, suggests that they chose base62 for the same reason that they suggest using underscores instead of hyphens in the namespace prefix: double click compatibility. The standard extra characters in base64 are `+` and `/`, and both of these cause selection segmentation upon double clicking a string. Try it:
 
-```
+```text
 abc_pqr (entirely selected)
 abc-pqr (PARTIALLY selected)
 abc+pqr (PARTIALLY selected)
@@ -83,7 +83,7 @@ Of course, this design is inconsistent because the CRC-32 checksum is a 32 bit s
 
 The extra characters allowed in token68 are `"-" / "." / "_" / "~" / "+" / "/"`. Unfortunately, as you can test below, only underscore amongst these results in a fully selectable string from double clicking:
 
-```
+```text
 abc-pqr
 abc.pqr
 abc_pqr
