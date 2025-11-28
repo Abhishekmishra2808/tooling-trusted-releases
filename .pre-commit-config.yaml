@@ -1,5 +1,10 @@
 exclude: ^node_modules/
 repos:
+- repo: meta
+  hooks:
+    - id: check-hooks-apply
+      name: run check hooks apply
+      description: check that all the hooks apply to the repository
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v6.0.0
   hooks:
