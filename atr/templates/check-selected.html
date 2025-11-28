@@ -78,12 +78,13 @@
 
   {% include "check-selected-release-info.html" %}
 
-  {% if ongoing_tasks_count > 0 %}
-    <div class="alert alert-warning" role="alert">
-      <i class="bi bi-exclamation-triangle me-2"></i>
-      There {{ 'is' if ongoing_tasks_count == 1 else 'are' }} currently <strong>{{ ongoing_tasks_count }}</strong> background verification {{ 'task' if ongoing_tasks_count == 1 else 'tasks' }} running for the latest revision. Results shown below may be incomplete or outdated until the tasks finish. You cannot start a vote until the tasks finish. Refresh the page to see updates.
-    </div>
-  {% endif %}
+  <div id="ongoing-tasks-banner"
+       class="alert alert-warning{% if ongoing_tasks_count == 0 %} d-none{% endif %}"
+       role="alert"
+       {% if revision_number %}data-api-url="/api/checks/ongoing/{{ release.project.name }}/{{ release.version }}/{{ revision_number }}"{% endif %}>
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <span id="ongoing-tasks-text">There {{ 'is' if ongoing_tasks_count == 1 else 'are' }} currently <strong id="ongoing-tasks-count">{{ ongoing_tasks_count }}</strong> background verification {{ 'task' if ongoing_tasks_count == 1 else 'tasks' }} running for the latest revision. Results shown below may be incomplete or outdated until the tasks finish.</span>
+  </div>
 
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -213,5 +214,80 @@
   {{ super() }}
   <script>
       init();
+
+      (function() {
+          const banner = document.getElementById("ongoing-tasks-banner");
+          if (!banner) return;
+
+          const apiUrl = banner.dataset.apiUrl;
+          if (!apiUrl) return;
+
+          const countSpan = document.getElementById("ongoing-tasks-count");
+          const textSpan = document.getElementById("ongoing-tasks-text");
+          const voteButton = document.getElementById("start-vote-button");
+          const pollInterval = 2500;
+
+          let currentCount = parseInt(countSpan?.textContent || "0", 10);
+          if (currentCount === 0) return;
+
+          function updateBanner(count) {
+              if (!countSpan || !textSpan) return;
+
+              currentCount = count;
+              countSpan.textContent = count;
+
+              const taskWord = count === 1 ? "task" : "tasks";
+              const isAre = count === 1 ? "is" : "are";
+              // TODO: Migrate away from setting innerHTML
+              textSpan.innerHTML = `There ${isAre} currently <strong id="ongoing-tasks-count">${count}</strong> background verification ${taskWord} running for the latest revision. Results shown below may be incomplete or outdated until the tasks finish.`;
+
+              if (count === 0) {
+                  // Banner always exists, but we hide it
+                  banner.classList.add("d-none");
+                  enableVoteButton();
+              }
+          }
+
+          function enableVoteButton() {
+              if (!voteButton) return;
+              if (!voteButton.classList.contains("disabled")) return;
+
+              const voteHref = voteButton.dataset.voteHref || voteButton.getAttribute("href");
+              if (!voteHref || voteHref === "#") return;
+
+              voteButton.classList.remove("disabled");
+              voteButton.removeAttribute("aria-disabled");
+              voteButton.removeAttribute("tabindex");
+              voteButton.removeAttribute("role");
+              voteButton.setAttribute("href", voteHref);
+              voteButton.setAttribute("title", "Start a vote on this draft");
+          }
+
+          function pollOngoingTasks() {
+              if (currentCount === 0) return;
+
+              fetch(apiUrl)
+                  .then(response => {
+                      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                      return response.json();
+                  })
+                  .then(data => {
+                      const newCount = data.ongoing || 0;
+                      if (newCount !== currentCount) {
+                          updateBanner(newCount);
+                      }
+                      if (newCount > 0) {
+                          setTimeout(pollOngoingTasks, pollInterval);
+                      }
+                  })
+                  .catch(error => {
+                      console.error("Error polling ongoing tasks:", error);
+                      // Double the interval when there's an error
+                      setTimeout(pollOngoingTasks, pollInterval * 2);
+                  });
+          }
+
+          setTimeout(pollOngoingTasks, pollInterval);
+      })();
   </script>
 {% endblock javascripts %}
