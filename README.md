@@ -12,6 +12,8 @@
   <img alt="Apache License" src="https://img.shields.io/github/license/apache/tooling-trusted-releases" />
 </a>
 
+**NOTE: New contributors must introduce themselves on [the development mailing list first](mailto:dev@tooling.apache.org), to deter spam. Contributions are very welcome, but please do not submit a PR until you have introduced yourself first.**
+
 ## Status
 
 This repository contains code developed by the **Apache Software Foundation (ASF) Tooling team**.
@@ -41,6 +43,8 @@ If you are an ASF committer or contributor interested in Trusted Releases:
 
 3. **Share ideas or file issues:**
    Use the [GitHub Issues](https://github.com/apache/tooling-trusted-releases/issues) page to report bugs, suggest features, or discuss improvements.
+
+As mentioned above, **new contributors must introduce themselves on the development mailing list first**, to deter spam. Contributions are very welcome, but please do not submit a PR until you have introduced yourself otherwise it will likely be rejected. Our [contribution guide](https://release-test.apache.org/docs/how-to-contribute) contains lots more useful information.
 
 ## License
 

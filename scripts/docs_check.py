@@ -69,7 +69,7 @@ def _extract_links(file_path: pathlib.Path) -> list[Link]:
             if target.startswith("/"):
                 continue
 
-            if target.startswith("http://") or target.startswith("https://"):
+            if target.startswith("http://") or target.startswith("https://") or target.startswith("mailto:"):
                 continue
 
             anchor = None

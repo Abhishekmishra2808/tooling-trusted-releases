@@ -57,7 +57,7 @@ When you find yourself nesting code more than two or three levels deep, extract 
 
 ### Do not use lint or type checker ignore statements
 
-You must not use `# noqa`, `# type: ignore`, or equivalents such as `cast`, even to ignore specific errors. The single exception to this is when there is a bug in the linter or type checker. Such ignores should be scoped to the category of error being raised by the checker. We currently use pyright for checking, where one additional restriction is that ignores of the style `# type: ignore` or `# type: ignore[category]` must not be used.
+You must not use `# noqa`, `# type: ignore`, or equivalents such as `cast`, even to ignore specific errors. The single exception to this is when there is a bug in the linter or type checker. Such ignores should be scoped to the category of error being raised by the checker. We currently use pyright for type checking, where one additional restriction is that ignores of the style `# type: ignore` or `# type: ignore[category]` [must not be used](https://github.com/apache/tooling-trusted-releases/issues/375).
 
 File level lint ignores can be added to the project's `pyproject.toml`, but they must be used sparingly.
 

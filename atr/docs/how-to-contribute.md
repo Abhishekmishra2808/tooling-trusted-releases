@@ -22,6 +22,8 @@ ATR is developed by ASF Tooling in public as open source code, and we welcome hi
 
 This page explains how to contribute code and documentation to ATR. We recommend reading the [platform introduction](introduction-to-atr) and [overview of the code](overview-of-the-code) first to understand the purpose of ATR and how the codebase is structured. You should also read the [code conventions](code-conventions) page; we expect all contributions to follow those conventions.
 
+**IMPORTANT: New contributors must introduce themselves on [the development mailing list first](mailto:dev@tooling.apache.org), to deter spam.** Contributions are very welcome, but please do not submit a PR until you have introduced yourself first.
+
 ## Finding something to work on
 
 The easiest way to find something to work on is to look at our [issue tracker](https://github.com/apache/tooling-trusted-releases/issues) on GitHub. We label [issues that are suitable for new contributors](https://github.com/apache/tooling-trusted-releases/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) as `good first issue`. These are typically small, well-defined tasks that do not require deep familiarity with the entire codebase. Working on one of these issues is an excellent way to learn how ATR works and how we develop it.
