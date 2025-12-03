@@ -63,8 +63,14 @@ async def selected_revision(
         if release.release_policy and (release.release_policy.min_hours is not None):
             min_hours = release.release_policy.min_hours
 
+        revision_obj = await data.revision(release_name=release.name, number=revision).get()
+        if revision_obj and revision_obj.tag:
+            subject_suffix = f" (tag: {revision_obj.tag})"
+        else:
+            subject_suffix = f" (revision {revision})"
+
         # TODO: Add the draft revision number or tag to the subject
-        default_subject = f"[VOTE] Release {release.project.display_name} {release.version}"
+        default_subject = f"[VOTE] Release {release.project.display_name} {release.version}{subject_suffix}"
         default_body = await construct.start_vote_default(project_name)
 
         keys_warning = await _check_keys_warning(committee)
