@@ -24,7 +24,10 @@ import atr.util as util
 class StartReleaseForm(form.Form):
     version_name: str = form.label(
         "Version",
-        "Enter the version string for this new release. Examples: 1.2.3 or 2.5-M1",
+        "Enter the version string for this new release."
+        " This cannot be changed later, and must be the version of the finished release."
+        " ATR generates a unique revision serial number for each voting round,"
+        " and you can also set your own tag before a vote starts.",
     )
 
     @pydantic.field_validator("version_name", mode="after")

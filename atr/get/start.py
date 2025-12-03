@@ -16,6 +16,7 @@
 # under the License.
 
 import asfquart.base as base
+import htpy
 
 import atr.blueprints.get as get
 import atr.db as db
@@ -71,7 +72,25 @@ async def _render_page(project: sql.Project, releases: list[sql.Release]) -> htm
             with row.block(htm.div, classes=".col-12") as col:
                 with col.block(htm.ul, classes=".list-unstyled.row.g-3") as ul:
                     _existing_releases(ul, releases)
-
+    page.h2(".mt-5")["Version numbers, revision serial numbers, and tags"]
+    page.p[
+        "Your version number should look like ",
+        htpy.code["1.2"],
+        " or ",
+        htpy.code["1.2.3"],
+        """ etc. and should not include a release candidate, alpha, beta, or
+        milestone portion. Whenever you modify your release files before
+        starting a vote, ATR creates a new revision serial number like """,
+        htpy.code["00002"],
+        """ which you can then refer to in the vote announcement email. You
+        can also tag revisions, and either the revision serial number or the
+        tag can be used in the vote announcement email. The tag can e.g. be
+        set to """,
+        htpy.code["M1"],
+        " or ",
+        htpy.code["rc1"],
+        ".",
+    ]
     return page.collect()
 
 
