@@ -27,6 +27,7 @@ import atr.form as form
 import atr.htm as htm
 import atr.models.sql as sql
 import atr.post as post
+import atr.render as render
 import atr.shared as shared
 import atr.shared.distribution as distribution
 import atr.template as template
@@ -168,49 +169,7 @@ def _render_release_card(release: sql.Release) -> htm.Element:
 
 def _render_body_tabs(default_body: str) -> htm.Element:
     """Render the tabbed interface for body editing and preview."""
-
-    tabs_ul = htm.ul("#announceBodyTab.nav.nav-tabs", role="tablist")[
-        htm.li(".nav-item", role="presentation")[
-            htpy.button(
-                "#edit-announce-body-tab.nav-link.active",
-                data_bs_toggle="tab",
-                data_bs_target="#edit-announce-body-pane",
-                type="button",
-                role="tab",
-                aria_controls="edit-announce-body-pane",
-                aria_selected="true",
-            )["Edit"]
-        ],
-        htm.li(".nav-item", role="presentation")[
-            htpy.button(
-                "#text-preview-announce-body-tab.nav-link",
-                data_bs_toggle="tab",
-                data_bs_target="#text-preview-announce-body-pane",
-                type="button",
-                role="tab",
-                aria_controls="text-preview-announce-body-pane",
-                aria_selected="false",
-            )["Text preview"]
-        ],
-    ]
-
-    edit_pane = htm.div("#edit-announce-body-pane.tab-pane.fade.show.active", role="tabpanel")[
-        htpy.textarea(
-            "#body.form-control.font-monospace.mt-2",
-            name="body",
-            rows="12",
-        )[default_body]
-    ]
-
-    preview_pane = htm.div("#text-preview-announce-body-pane.tab-pane.fade", role="tabpanel")[
-        htm.pre(".mt-2.p-3.bg-light.border.rounded.font-monospace.overflow-auto")[
-            htm.code("#announce-text-preview-content")["Loading preview..."]
-        ]
-    ]
-
-    tab_content = htm.div("#announceBodyTabContent.tab-content")[edit_pane, preview_pane]
-
-    return htm.div[tabs_ul, tab_content]
+    return render.body_tabs("announce-body", default_body, construct.announce_template_variables())
 
 
 def _render_mailing_list_with_warning(choices: list[tuple[str, str]], default_value: str) -> htm.Element:
@@ -282,7 +241,7 @@ def _render_javascript(release: sql.Release, download_path_description: str) -> 
             const debounceDelay = 500;
 
             const bodyTextarea = document.getElementById("body");
-            const textPreviewContent = document.getElementById("announce-text-preview-content");
+            const textPreviewContent = document.getElementById("announce-body-preview-content");
             const announceForm = document.querySelector("form.atr-canary");
 
             if (!bodyTextarea || !textPreviewContent || !announceForm) {{
@@ -336,6 +295,8 @@ def _render_javascript(release: sql.Release, download_path_description: str) -> 
             }});
 
             fetchAndUpdateAnnouncePreview();
+
+            {render.copy_javascript()}
 
             const pathInput = document.getElementById("download_path_suffix");
             const pathHelpText = pathInput ? pathInput.parentElement.querySelector(".form-text") : null;

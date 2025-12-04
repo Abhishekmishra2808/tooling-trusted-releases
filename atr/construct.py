@@ -16,6 +16,7 @@
 # under the License.
 
 import dataclasses
+from typing import Literal
 
 import aiofiles.os
 import quart
@@ -25,6 +26,24 @@ import atr.db as db
 import atr.db.interaction as interaction
 import atr.models.sql as sql
 import atr.util as util
+
+type Context = Literal["vote", "announce"]
+
+TEMPLATE_VARIABLES: list[tuple[str, str, set[Context]]] = [
+    ("COMMITTEE", "Committee display name", {"vote", "announce"}),
+    ("DOWNLOAD_URL", "URL to download the release", {"announce"}),
+    ("DURATION", "Vote duration in hours", {"vote"}),
+    ("KEYS_FILE", "URL to the KEYS file", {"vote"}),
+    ("PROJECT", "Project display name", {"vote", "announce"}),
+    ("RELEASE_CHECKLIST", "Release checklist content", {"vote"}),
+    ("REVIEW_URL", "URL to review the release", {"vote"}),
+    ("REVISION", "Revision number", {"vote", "announce"}),
+    ("TAG", "Revision tag, if set", {"vote", "announce"}),
+    ("VERSION", "Version name", {"vote", "announce"}),
+    ("VOTE_ENDS_UTC", "Vote end date and time in UTC", {"vote"}),
+    ("YOUR_ASF_ID", "Your Apache UID", {"vote", "announce"}),
+    ("YOUR_FULL_NAME", "Your full name", {"vote", "announce"}),
+]
 
 
 @dataclasses.dataclass
@@ -100,6 +119,10 @@ async def announce_release_default(project_name: str) -> str:
     return project.policy_announce_release_template
 
 
+def announce_template_variables() -> list[tuple[str, str]]:
+    return [(name, desc) for (name, desc, contexts) in TEMPLATE_VARIABLES if "announce" in contexts]
+
+
 async def start_vote_body(body: str, options: StartVoteOptions) -> str:
     async with db.session() as data:
         # Do not limit by phase, as it may be at RELEASE_CANDIDATE here if called by the task
@@ -166,3 +189,7 @@ async def start_vote_default(project_name: str) -> str:
         )
 
     return project.policy_start_vote_template
+
+
+def vote_template_variables() -> list[tuple[str, str]]:
+    return [(name, desc) for (name, desc, contexts) in TEMPLATE_VARIABLES if "vote" in contexts]

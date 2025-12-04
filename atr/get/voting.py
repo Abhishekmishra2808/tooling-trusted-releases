@@ -30,6 +30,7 @@ import atr.get.keys as keys
 import atr.htm as htm
 import atr.models.sql as sql
 import atr.post as post
+import atr.render as render
 import atr.shared as shared
 import atr.template as template
 import atr.util as util
@@ -65,7 +66,7 @@ async def selected_revision(
 
         revision_obj = await data.revision(release_name=release.name, number=revision).get()
         if revision_obj and revision_obj.tag:
-            subject_suffix = f" (tag: {revision_obj.tag})"
+            subject_suffix = f" ({revision_obj.tag})"
         else:
             subject_suffix = f" (revision {revision})"
 
@@ -173,49 +174,7 @@ async def _render_page(
 
 def _render_body_tabs(default_body: str) -> htm.Element:
     """Render the tabbed interface for body editing and preview."""
-
-    tabs_ul = htm.ul("#voteBodyTab.nav.nav-tabs", role="tablist")[
-        htm.li(".nav-item", role="presentation")[
-            htpy.button(
-                "#edit-vote-body-tab.nav-link.active",
-                data_bs_toggle="tab",
-                data_bs_target="#edit-vote-body-pane",
-                type="button",
-                role="tab",
-                aria_controls="edit-vote-body-pane",
-                aria_selected="true",
-            )["Edit"]
-        ],
-        htm.li(".nav-item", role="presentation")[
-            htpy.button(
-                "#text-preview-vote-body-tab.nav-link",
-                data_bs_toggle="tab",
-                data_bs_target="#text-preview-vote-body-pane",
-                type="button",
-                role="tab",
-                aria_controls="text-preview-vote-body-pane",
-                aria_selected="false",
-            )["Text preview"]
-        ],
-    ]
-
-    edit_pane = htm.div("#edit-vote-body-pane.tab-pane.fade.show.active", role="tabpanel")[
-        htpy.textarea(
-            "#body.form-control.font-monospace.mt-2",
-            name="body",
-            rows="12",
-        )[default_body]
-    ]
-
-    preview_pane = htm.div("#text-preview-vote-body-pane.tab-pane.fade", role="tabpanel")[
-        htm.pre(".mt-2.p-3.bg-light.border.rounded.font-monospace.overflow-auto")[
-            htm.code("#vote-text-preview-content")["Loading preview..."]
-        ]
-    ]
-
-    tab_content = htm.div("#voteBodyTabContent.tab-content")[edit_pane, preview_pane]
-
-    return htm.div[tabs_ul, tab_content]
+    return render.body_tabs("vote-body", default_body, construct.vote_template_variables())
 
 
 def _render_javascript(release, min_hours: int) -> htm.Element:
@@ -231,7 +190,7 @@ def _render_javascript(release, min_hours: int) -> htm.Element:
 
             const bodyTextarea = document.getElementById("body");
             const voteDurationInput = document.getElementById("vote_duration");
-            const textPreviewContent = document.getElementById("vote-text-preview-content");
+            const textPreviewContent = document.getElementById("vote-body-preview-content");
             const voteForm = document.querySelector("form.atr-canary");
 
             if (!bodyTextarea || !voteDurationInput || !textPreviewContent || !voteForm) {{
@@ -292,6 +251,8 @@ def _render_javascript(release, min_hours: int) -> htm.Element:
             }});
 
             fetchAndUpdateVotePreview();
+
+            {render.copy_javascript()}
         }});
     """
 
