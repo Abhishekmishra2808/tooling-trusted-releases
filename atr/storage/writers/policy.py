@@ -18,10 +18,15 @@
 # Removing this will cause circular imports
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import atr.db as db
 import atr.models as models
 import atr.storage as storage
 import atr.util as util
+
+if TYPE_CHECKING:
+    import atr.shared as shared
 
 
 class GeneralPublic:
@@ -86,9 +91,57 @@ class CommitteeMember(CommitteeParticipant):
         self.__asf_uid = asf_uid
         self.__committee_name = committee_name
 
-    async def edit(self, project_name: str, policy_data: models.policy.ReleasePolicyData) -> None:
+    async def edit_compose(self, form: shared.projects.ComposePolicyForm) -> None:
+        project_name = form.project_name
+        _, release_policy = await self.__get_or_create_policy(project_name)
+
+        release_policy.source_artifact_paths = _split_lines(form.source_artifact_paths)
+        release_policy.binary_artifact_paths = _split_lines(form.binary_artifact_paths)
+        release_policy.github_repository_name = form.github_repository_name.strip()
+        release_policy.github_compose_workflow_path = _split_lines(form.github_compose_workflow_path)
+        release_policy.strict_checking = form.strict_checking
+
+        await self.__commit_and_log(project_name)
+
+    async def edit_finish(self, form: shared.projects.FinishPolicyForm) -> None:
+        project_name = form.project_name
+        project, release_policy = await self.__get_or_create_policy(project_name)
+
+        release_policy.github_finish_workflow_path = _split_lines(form.github_finish_workflow_path)
+        self.__set_announce_release_template(form.announce_release_template or "", project, release_policy)
+        release_policy.preserve_download_files = form.preserve_download_files
+
+        await self.__commit_and_log(project_name)
+
+    async def edit_vote(self, form: shared.projects.VotePolicyForm) -> None:
+        project_name = form.project_name
+        project, release_policy = await self.__get_or_create_policy(project_name)
+
+        release_policy.manual_vote = form.manual_vote
+
+        if not release_policy.manual_vote:
+            release_policy.github_vote_workflow_path = _split_lines(form.github_vote_workflow_path)
+            release_policy.mailto_addresses = [form.mailto_addresses]
+            self.__set_min_hours(form.min_hours, project, release_policy)
+            release_policy.pause_for_rm = form.pause_for_rm
+            release_policy.release_checklist = form.release_checklist or ""
+            release_policy.vote_comment_template = form.vote_comment_template or ""
+            self.__set_start_vote_template(form.start_vote_template or "", project, release_policy)
+        elif project.committee and project.committee.is_podling:
+            raise storage.AccessError("Manual voting is not allowed for podlings.")
+
+        await self.__commit_and_log(project_name)
+
+    async def __commit_and_log(self, project_name: str) -> None:
+        await self.__data.commit()
+        self.__write_as.append_to_audit_log(
+            asf_uid=self.__asf_uid,
+            project_name=project_name,
+        )
+
+    async def __get_or_create_policy(self, project_name: str) -> tuple[models.sql.Project, models.sql.ReleasePolicy]:
         project = await self.__data.project(
-            name=project_name, status=models.sql.ProjectStatus.ACTIVE, _release_policy=True
+            name=project_name, status=models.sql.ProjectStatus.ACTIVE, _release_policy=True, _committee=True
         ).demand(storage.AccessError(f"Project {project_name} not found"))
 
         release_policy = project.release_policy
@@ -97,93 +150,53 @@ class CommitteeMember(CommitteeParticipant):
             project.release_policy = release_policy
             self.__data.add(release_policy)
 
-        # Compose section
-        release_policy.source_artifact_paths = policy_data.source_artifact_paths
-        release_policy.binary_artifact_paths = policy_data.binary_artifact_paths
-        release_policy.github_repository_name = policy_data.github_repository_name
-        # TODO: Change to paths, plural
-        release_policy.github_compose_workflow_path = policy_data.github_compose_workflow_path
-        release_policy.strict_checking = policy_data.strict_checking
+        return project, release_policy
 
-        # Vote section
-        release_policy.manual_vote = policy_data.manual_vote
-        if not release_policy.manual_vote:
-            release_policy.github_vote_workflow_path = policy_data.github_vote_workflow_path
-            release_policy.mailto_addresses = policy_data.mailto_addresses
-            self.__set_default_min_hours(policy_data, project, release_policy)
-            release_policy.pause_for_rm = policy_data.pause_for_rm
-            release_policy.release_checklist = policy_data.release_checklist
-            release_policy.vote_comment_template = policy_data.vote_comment_template
-            self.__set_default_start_vote_template(policy_data, project, release_policy)
-        elif project.committee and project.committee.is_podling:
-            # The caller ensures that project.committee is not None
-            raise storage.AccessError("Manual voting is not allowed for podlings.")
-
-        # Finish section
-        release_policy.github_finish_workflow_path = policy_data.github_finish_workflow_path
-        self.__set_default_announce_release_template(policy_data, project, release_policy)
-        release_policy.preserve_download_files = policy_data.preserve_download_files
-
-        await self.__data.commit()
-        self.__write_as.append_to_audit_log(
-            asf_uid=self.__asf_uid,
-            project_name=project_name,
-        )
-
-    def __set_default_announce_release_template(
+    def __set_announce_release_template(
         self,
-        policy_data: models.policy.ReleasePolicyData,
+        submitted_template: str,
         project: models.sql.Project,
         release_policy: models.sql.ReleasePolicy,
     ) -> None:
-        submitted_announce_template = policy_data.announce_release_template
-        submitted_announce_template = submitted_announce_template.replace("\r\n", "\n")
-        rendered_default_announce_hash = policy_data.default_announce_release_template_hash
-        current_default_announce_text = project.policy_announce_release_default
-        current_default_announce_hash = util.compute_sha3_256(current_default_announce_text.encode())
-        submitted_announce_hash = util.compute_sha3_256(submitted_announce_template.encode())
+        submitted_template = submitted_template.replace("\r\n", "\n")
+        current_default_text = project.policy_announce_release_default
+        current_default_hash = util.compute_sha3_256(current_default_text.encode())
+        submitted_hash = util.compute_sha3_256(submitted_template.encode())
 
-        if (submitted_announce_hash == rendered_default_announce_hash) or (
-            submitted_announce_hash == current_default_announce_hash
-        ):
+        if submitted_hash == current_default_hash:
             release_policy.announce_release_template = ""
         else:
-            release_policy.announce_release_template = submitted_announce_template
+            release_policy.announce_release_template = submitted_template
 
-    def __set_default_min_hours(
+    def __set_min_hours(
         self,
-        policy_data: models.policy.ReleasePolicyData,
+        submitted_min_hours: int,
         project: models.sql.Project,
         release_policy: models.sql.ReleasePolicy,
     ) -> None:
-        submitted_min_hours = policy_data.min_hours
-        default_value_seen_on_page_min_hours = policy_data.default_min_hours_value_at_render
-        current_system_default_min_hours = project.policy_default_min_hours
+        current_system_default = project.policy_default_min_hours
 
-        if (
-            submitted_min_hours == default_value_seen_on_page_min_hours
-            or submitted_min_hours == current_system_default_min_hours
-        ):
+        if submitted_min_hours == current_system_default:
             release_policy.min_hours = None
         else:
             release_policy.min_hours = submitted_min_hours
 
-    def __set_default_start_vote_template(
+    def __set_start_vote_template(
         self,
-        policy_data: models.policy.ReleasePolicyData,
+        submitted_template: str,
         project: models.sql.Project,
         release_policy: models.sql.ReleasePolicy,
     ) -> None:
-        submitted_start_template = policy_data.start_vote_template
-        submitted_start_template = submitted_start_template.replace("\r\n", "\n")
-        rendered_default_start_hash = policy_data.default_start_vote_template_hash
-        current_default_start_text = project.policy_start_vote_default
-        current_default_start_hash = util.compute_sha3_256(current_default_start_text.encode())
-        submitted_start_hash = util.compute_sha3_256(submitted_start_template.encode())
+        submitted_template = submitted_template.replace("\r\n", "\n")
+        current_default_text = project.policy_start_vote_default
+        current_default_hash = util.compute_sha3_256(current_default_text.encode())
+        submitted_hash = util.compute_sha3_256(submitted_template.encode())
 
-        if (submitted_start_hash == rendered_default_start_hash) or (
-            submitted_start_hash == current_default_start_hash
-        ):
+        if submitted_hash == current_default_hash:
             release_policy.start_vote_template = ""
         else:
-            release_policy.start_vote_template = submitted_start_template
+            release_policy.start_vote_template = submitted_template
+
+
+def _split_lines(text: str) -> list[str]:
+    return [line.strip() for line in text.split("\n") if line.strip()]

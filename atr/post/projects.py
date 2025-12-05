@@ -23,7 +23,6 @@ import quart
 import atr.blueprints.post as post
 import atr.db as db
 import atr.get as get
-import atr.models.policy as policy
 import atr.models.sql as sql
 import atr.shared as shared
 import atr.storage as storage
@@ -197,37 +196,10 @@ async def _process_compose_form(
 ) -> web.WerkzeugResponse:
     project_name = compose_form.project_name
 
-    async with db.session() as data:
-        project = await data.project(name=project_name, _committee=True, _release_policy=True).demand(
-            base.ASFQuartException(f"Project {project_name} not found", errorcode=404)
-        )
-
-    policy_data = policy.ReleasePolicyData(
-        project_name=project_name,
-        source_artifact_paths=[p.strip() for p in compose_form.source_artifact_paths.split("\n") if p.strip()],
-        binary_artifact_paths=[p.strip() for p in compose_form.binary_artifact_paths.split("\n") if p.strip()],
-        github_repository_name=compose_form.github_repository_name.strip() or "",
-        github_compose_workflow_path=[
-            p.strip() for p in compose_form.github_compose_workflow_path.split("\n") if p.strip()
-        ],
-        strict_checking=compose_form.strict_checking,
-        github_vote_workflow_path=project.policy_github_vote_workflow_path,
-        mailto_addresses=project.policy_mailto_addresses,
-        manual_vote=project.policy_manual_vote,
-        min_hours=project.policy_min_hours,
-        pause_for_rm=project.policy_pause_for_rm,
-        release_checklist=project.policy_release_checklist or "",
-        vote_comment_template=project.policy_vote_comment_template or "",
-        start_vote_template=project.policy_start_vote_template or "",
-        github_finish_workflow_path=project.policy_github_finish_workflow_path,
-        announce_release_template=project.policy_announce_release_template or "",
-        preserve_download_files=project.policy_preserve_download_files,
-    )
-
     async with storage.write(session) as write:
         wacm = await write.as_project_committee_member(project_name)
         try:
-            await wacm.policy.edit(project_name, policy_data)
+            await wacm.policy.edit_compose(compose_form)
         except storage.AccessError as e:
             return await session.redirect(
                 get.projects.view, name=project_name, error=f"Error editing compose policy: {e}"
@@ -256,37 +228,10 @@ async def _process_finish_form(
 ) -> web.WerkzeugResponse:
     project_name = finish_form.project_name
 
-    async with db.session() as data:
-        project = await data.project(name=project_name, _committee=True, _release_policy=True).demand(
-            base.ASFQuartException(f"Project {project_name} not found", errorcode=404)
-        )
-
-    policy_data = policy.ReleasePolicyData(
-        project_name=project_name,
-        source_artifact_paths=project.policy_source_artifact_paths,
-        binary_artifact_paths=project.policy_binary_artifact_paths,
-        github_repository_name=project.policy_github_repository_name or "",
-        github_compose_workflow_path=project.policy_github_compose_workflow_path,
-        strict_checking=project.policy_strict_checking,
-        github_vote_workflow_path=project.policy_github_vote_workflow_path,
-        mailto_addresses=project.policy_mailto_addresses,
-        manual_vote=project.policy_manual_vote,
-        min_hours=project.policy_min_hours,
-        pause_for_rm=project.policy_pause_for_rm,
-        release_checklist=project.policy_release_checklist or "",
-        vote_comment_template=project.policy_vote_comment_template or "",
-        start_vote_template=project.policy_start_vote_template or "",
-        github_finish_workflow_path=[
-            p.strip() for p in finish_form.github_finish_workflow_path.split("\n") if p.strip()
-        ],
-        announce_release_template=finish_form.announce_release_template or "",
-        preserve_download_files=finish_form.preserve_download_files,
-    )
-
     async with storage.write(session) as write:
         wacm = await write.as_project_committee_member(project_name)
         try:
-            await wacm.policy.edit(project_name, policy_data)
+            await wacm.policy.edit_finish(finish_form)
         except storage.AccessError as e:
             return await session.redirect(
                 get.projects.view, name=project_name, error=f"Error editing finish policy: {e}"
@@ -344,35 +289,10 @@ async def _process_remove_language(
 async def _process_vote_form(session: web.Committer, vote_form: shared.projects.VotePolicyForm) -> web.WerkzeugResponse:
     project_name = vote_form.project_name
 
-    async with db.session() as data:
-        project = await data.project(name=project_name, _committee=True, _release_policy=True).demand(
-            base.ASFQuartException(f"Project {project_name} not found", errorcode=404)
-        )
-
-    policy_data = policy.ReleasePolicyData(
-        project_name=project_name,
-        source_artifact_paths=project.policy_source_artifact_paths,
-        binary_artifact_paths=project.policy_binary_artifact_paths,
-        github_repository_name=project.policy_github_repository_name or "",
-        github_compose_workflow_path=project.policy_github_compose_workflow_path,
-        strict_checking=project.policy_strict_checking,
-        github_vote_workflow_path=[p.strip() for p in vote_form.github_vote_workflow_path.split("\n") if p.strip()],
-        mailto_addresses=[vote_form.mailto_addresses],
-        manual_vote=vote_form.manual_vote,
-        min_hours=vote_form.min_hours,
-        pause_for_rm=vote_form.pause_for_rm,
-        release_checklist=vote_form.release_checklist or "",
-        vote_comment_template=vote_form.vote_comment_template or "",
-        start_vote_template=vote_form.start_vote_template or "",
-        github_finish_workflow_path=project.policy_github_finish_workflow_path,
-        announce_release_template=project.policy_announce_release_template or "",
-        preserve_download_files=project.policy_preserve_download_files,
-    )
-
     async with storage.write(session) as write:
         wacm = await write.as_project_committee_member(project_name)
         try:
-            await wacm.policy.edit(project_name, policy_data)
+            await wacm.policy.edit_vote(vote_form)
         except storage.AccessError as e:
             return await session.redirect(get.projects.view, name=project_name, error=f"Error editing vote policy: {e}")
 
