@@ -18,6 +18,7 @@
 # Removing this will cause circular imports
 from __future__ import annotations
 
+import datetime
 from typing import Literal
 
 import atr.construct as construct
@@ -168,6 +169,25 @@ class CommitteeParticipant(FoundationCommitter):
         # Presumably this sets the default, and the form takes precedence?
         # ReleasePolicy.min_hours can also be 0, though
 
+        # Calculate vote end time for template substitution
+        vote_start = datetime.datetime.now(datetime.UTC)
+        vote_end = vote_start + datetime.timedelta(hours=vote_duration_choice)
+        vote_end_str = vote_end.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        # Perform template substitutions in the body before passing to task
+        # This must be done here and not in the task because we need util.as_url
+        body_substituted = await construct.start_vote_body(
+            body_data,
+            construct.StartVoteOptions(
+                asfuid=asf_uid,
+                fullname=asf_fullname,
+                project_name=project_name,
+                version_name=version_name,
+                vote_duration=vote_duration_choice,
+                vote_end=vote_end_str,
+            ),
+        )
+
         # Create a task for vote initiation
         task = sql.Task(
             status=sql.TaskStatus.QUEUED,
@@ -179,7 +199,7 @@ class CommitteeParticipant(FoundationCommitter):
                 initiator_id=asf_uid,
                 initiator_fullname=asf_fullname,
                 subject=subject_data,
-                body=body_data,
+                body=body_substituted,
             ).model_dump(),
             asf_uid=asf_uid,
             project_name=project_name,

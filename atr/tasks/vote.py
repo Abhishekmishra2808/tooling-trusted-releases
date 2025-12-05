@@ -17,7 +17,6 @@
 
 import datetime
 
-import atr.construct as construct
 import atr.db as db
 import atr.db.interaction as interaction
 import atr.log as log
@@ -101,21 +100,9 @@ async def _initiate_core_logic(args: Initiate) -> results.Results | None:
         log.error(error_msg)
         raise VoteInitiationError(error_msg)
 
-    # Construct email
+    # The body has already been substituted by the route handler
     subject = args.subject
-
-    # Perform substitutions in the body
-    body = await construct.start_vote_body(
-        args.body,
-        construct.StartVoteOptions(
-            asfuid=args.initiator_id,
-            fullname=args.initiator_fullname,
-            project_name=release.project.name,
-            version_name=release.version,
-            vote_duration=args.vote_duration,
-            vote_end=vote_end_str,
-        ),
-    )
+    body = args.body
 
     permitted_recipients = util.permitted_voting_recipients(args.initiator_id, release.committee.name)
     if args.email_to not in permitted_recipients:
@@ -131,8 +118,14 @@ async def _initiate_core_logic(args: Initiate) -> results.Results | None:
         body=body,
     )
 
-    # Send the email
-    mid, mail_errors = await mail.send(message)
+    if util.is_dev_environment():
+        # Pretend to send the mail
+        log.info("Dev environment detected, pretending to send mail")
+        mid = util.DEV_TEST_MID
+        mail_errors = []
+    else:
+        # Send the mail
+        mid, mail_errors = await mail.send(message)
 
     # Original success message structure
     result = results.VoteInitiate(
@@ -146,7 +139,7 @@ async def _initiate_core_logic(args: Initiate) -> results.Results | None:
     )
 
     if mail_errors:
-        log.warning(f"Start vote for {args.release_name}: sending to {args.email_to}  gave errors: {mail_errors}")
+        log.warning(f"Start vote for {args.release_name}: sending to {args.email_to} gave errors: {mail_errors}")
     else:
         log.info(f"Vote email sent successfully to {args.email_to}")
     return result

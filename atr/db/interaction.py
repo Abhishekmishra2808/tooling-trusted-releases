@@ -19,7 +19,7 @@ import contextlib
 import datetime
 import enum
 from collections.abc import AsyncGenerator, Sequence
-from typing import Any, Final
+from typing import Any
 
 import packaging.version as version
 import sqlalchemy
@@ -35,20 +35,6 @@ import atr.models.sql as sql
 import atr.user as user
 import atr.util as util
 import atr.web as web
-
-# TEST_MID: Final[str | None] = "CAH5JyZo8QnWmg9CwRSwWY=GivhXW4NiLyeNJO71FKdK81J5-Uw@mail.gmail.com"
-TEST_MID: Final[str | None] = None
-_THREAD_URLS_FOR_DEVELOPMENT: Final[dict[str, str]] = {
-    "CAH5JyZo8QnWmg9CwRSwWY=GivhXW4NiLyeNJO71FKdK81J5-Uw@mail.gmail.com": "https://lists.apache.org/thread/z0o7xnjnyw2o886rxvvq2ql4rdfn754w",
-    "818a44a3-6984-4aba-a650-834e86780b43@apache.org": "https://lists.apache.org/thread/619hn4x796mh3hkk3kxg1xnl48dy2s64",
-    "CAA9ykM+bMPNk=BOF9hj0O+mjN1igppOJ+pKdZHcAM0ddVi+5_w@mail.gmail.com": "https://lists.apache.org/thread/x0m3p2xqjvflgtkb6oxqysm36cr9l5mg",
-    "CAFHDsVzgtfboqYF+a3owaNf+55MUiENWd3g53mU4rD=WHkXGwQ@mail.gmail.com": "https://lists.apache.org/thread/brj0k3g8pq63g8f7xhmfg2rbt1240nts",
-    "CAMomwMrvKTQK7K2-OtZTrEO0JjXzO2g5ynw3gSoks_PXWPZfoQ@mail.gmail.com": "https://lists.apache.org/thread/y5rqp5qk6dmo08wlc3g20n862hznc9m8",
-    "CANVKqzfLYj6TAVP_Sfsy5vFbreyhKskpRY-vs=F7aLed+rL+uA@mail.gmail.com": "https://lists.apache.org/thread/oy969lhh6wlzd51ovckn8fly9rvpopwh",
-    "CAH4123ZwGtkwszhEU7qnMByLa-yvyKz2W+DjH_UChPMuzaa54g@mail.gmail.com": "https://lists.apache.org/thread/7111mqyc25sfqxm6bf4ynwhs0bk0r4ys",
-    "CADL1oArKFcXvNb1MJfjN=10-yRfKxgpLTRUrdMM1R7ygaTkdYQ@mail.gmail.com": "https://lists.apache.org/thread/d7119h2qm7jrd5zsbp8ghkk0lpvnnxnw",
-    "a1507118-88b1-4b7b-923e-7f2b5330fc01@apache.org": "https://lists.apache.org/thread/gzjd2jv7yod5sk5rgdf4x33g5l3fdf5o",
-}
 
 
 class ApacheUserMissingError(RuntimeError):
@@ -338,11 +324,11 @@ async def releases_in_progress(project: sql.Project) -> list[sql.Release]:
 
 
 def task_mid_get(latest_vote_task: sql.Task) -> str | None:
-    if util.is_dev_environment():
-        import atr.db.interaction as interaction
+    # if util.is_dev_environment():
+    #     import atr.db.interaction as interaction
 
-        return interaction.TEST_MID
-    # TODO: Improve this
+    #     return interaction.TEST_MID
+    # # TODO: Improve this
 
     result = latest_vote_task.result
     if not isinstance(result, results.VoteInitiate):

@@ -161,7 +161,7 @@ async def start_vote_body(body: str, options: StartVoteOptions) -> str:
     import atr.get.vote as vote
 
     async with db.session() as data:
-        # Do not limit by phase, as it may be at RELEASE_CANDIDATE here if called by the task
+        # Do not limit by phase, as it may be at RELEASE_CANDIDATE already
         release = await data.release(
             project_name=options.project_name,
             version=options.version_name,

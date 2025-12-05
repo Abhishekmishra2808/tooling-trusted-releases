@@ -206,21 +206,21 @@ def lifecycle_05_resolve_vote(page: sync_api.Page, credentials: Credentials, ver
     logging.info("Vote page loaded successfully")
 
     # Wait until the vote initiation background task has completed
-    # When it finishes the page shows a banner that begins with "Vote thread started"
-    # We poll for that banner before moving on
+    # When it finishes the page shows a "view thread" link
+    # We poll for that link before moving on
     # Otherwise the subsequent Resolve step cannot find the completed VOTE_INITIATE task
-    # TODO: Make a poll_for_tasks_completion style function that can be used here
-    banner_locator = page.locator("p.text-success:has-text('Vote thread started')")
-    banner_found = False
+    # Note that this actually doesn't matter in dev testing
+    thread_link_locator = page.locator('a:has-text("view thread")')
+    link_found = False
     for _ in range(30):
-        if banner_locator.is_visible(timeout=500):
-            banner_found = True
-            logging.info("Vote initiation banner detected, task completed")
+        if thread_link_locator.is_visible(timeout=500):
+            link_found = True
+            logging.info("Vote thread link detected, task completed")
             break
         time.sleep(0.5)
         page.reload()
-    if not banner_found:
-        logging.warning("Vote initiation banner not detected after 15s, proceeding anyway")
+    if not link_found:
+        logging.warning("Vote thread link not detected after 15s, proceeding anyway")
 
     logging.info("Locating the 'Resolve vote' button")
     tabulate_form_locator = page.locator(f'form[action="/resolve/{TEST_PROJECT}/{version_name}"]')
