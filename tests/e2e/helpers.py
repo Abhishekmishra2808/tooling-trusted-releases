@@ -15,6 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import os
+from typing import Final
 
-def test_hello() -> None:
-    assert True
+from playwright.sync_api import Page
+
+_ATR_BASE_URL: Final[str] = os.environ.get("ATR_BASE_URL", "https://localhost:8080")
+
+
+def visit(page: Page, path: str) -> None:
+    page.goto(f"{_ATR_BASE_URL}{path}")
+    page.wait_for_load_state()

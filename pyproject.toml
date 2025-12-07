@@ -106,6 +106,7 @@ executionEnvironments = [
 minversion = "8.0"
 testpaths  = ["tests"]
 asyncio_mode = "auto"
+addopts = "--ignore=tests/e2e"
 
 [tool.ruff]
 line-length = 120

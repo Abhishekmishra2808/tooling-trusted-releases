@@ -166,6 +166,8 @@ import typing
 CONSTANT: typing.Final = "CONSTANT"
 ```
 
+In tests, only, `playwright.sync_api` is another exception. Use `from playwright.sync_api import expect`, for example.
+
 ### Use concise typing patterns
 
 Do not use `List` or `Optional` etc. from the typing module.
