@@ -48,7 +48,7 @@
               <span class="badge bg-dark">Unknown</span>
             {% endif %}
           </td>
-          <td>{{ release.created.strftime("%Y-%m-%d<br>%H:%M:%S UTC")|safe }}</td>
+          <td>{{ release.created.strftime("%Y-%m-%d") }}<br>{{ release.created.strftime("%H:%M:%S UTC") }}</td>
         </tr>
       {% else %}
         <tr>

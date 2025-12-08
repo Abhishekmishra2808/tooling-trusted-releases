@@ -9,3 +9,27 @@ repos:
       args: ['--fix', '-o', '4', '--strip', 'safe', '--alpha']
       # types: [image]
       # files: \.png$
+- repo: https://github.com/semgrep/semgrep
+  rev: v1.145.0
+  hooks:
+    - id: semgrep
+      args:
+        - --config=p/ci
+        - --config=p/cwe-top-25
+        - --config=p/docker-compose
+        - --config=p/jwt
+        - --config=p/owasp-top-ten
+        - --config=p/python
+        - --config=p/secrets
+        - --config=p/security-audit
+        - --config=p/sql-injection
+        - --error
+        - --quiet
+        - --metrics=off
+        - --disable-version-check
+        - --exclude=migrations/versions/0027_2025.09.08_69e565eb.py
+        - --exclude-rule=generic.html-templates.security.var-in-href.var-in-href
+        - --exclude-rule=html.security.plaintext-http-link.plaintext-http-link
+        - --exclude-rule=python.lang.security.use-defused-xml.use-defused-xml
+        - --exclude-rule=python.lang.security.use-defused-xml-parse.use-defused-xml-parse
+      pass_filenames: false
