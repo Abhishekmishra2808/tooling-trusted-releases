@@ -100,6 +100,8 @@ async def assemble_component_supplier(
 
     if purl_value and purl_value.startswith("pkg:maven/"):
         package_version = purl_value.removeprefix("pkg:maven/").rsplit("?", 1)[0]
+        if "@" not in package_version:
+            return
         package, version = package_version.rsplit("@", 1)
         package = package.replace("/", ":")
         key = f"{package} / {version}"
