@@ -38,7 +38,7 @@ body {
 }
 
 .bg-info-light {
-    background-color: #f8f8f8 !important;
+    background-color: #28265e !important;
 }
 
 .dropdown-menu {
@@ -54,6 +54,10 @@ body {
 
 nav.navbar {
     padding: 0.5rem 2rem;
+}
+
+nav.navbar * {
+    color: #ffffff !important;
 }
 
 html {
