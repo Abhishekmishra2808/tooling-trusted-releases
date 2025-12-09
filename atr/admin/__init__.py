@@ -715,11 +715,6 @@ async def task_times(
     return web.TextResponse("\n".join(values))
 
 
-@admin.get("/tasks")
-async def tasks_(session: web.Committer) -> str:
-    return await template.render("tasks.html")
-
-
 @admin.get("/tasks/recent/<int:minutes>")
 async def tasks_recent(session: web.Committer, minutes: int) -> str:
     """Display tasks from the last N minutes."""

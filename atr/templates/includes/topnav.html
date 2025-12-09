@@ -264,15 +264,7 @@
               </li>
               <li>
                 <a class="dropdown-item"
-                   href="{{ as_url(admin.tasks_) }}"
-                   {% if request.endpoint == 'atr_admin_tasks_' %}class="active"{% endif %}><i class="bi bi-list-task"></i> Background tasks</a>
-              </li>
-              <li>
-                <hr class="dropdown-divider" />
-              </li>
-              <li>
-                <a class="dropdown-item"
-                   href="{{ as_url(admin.tasks_recent, minutes=5) }}"><i class="bi bi-clock-history"></i> Recent tasks</a>
+                   href="{{ as_url(admin.tasks_recent, minutes=5) }}"><i class="bi bi-list-task"></i> Recent tasks</a>
               </li>
               <li>
                 <a class="dropdown-item"
