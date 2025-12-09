@@ -191,6 +191,10 @@ nav.navbar button, nav.navbar a.navbar-brand {
     color: #ffffff !important;
 }
 
+nav.navbar button.navbar-toggler {
+    background-color: #ffffff !important;
+}
+
 label[for] {
     font-weight: 450;
 
