@@ -3,7 +3,9 @@ repos:
 - repo: local
   hooks:
     - id: biome-check
-      name: biome (no-npm) check
+      # Install biome from https://biomejs.dev/guides/manual-installation/
+      # Avoid using NPM to install it until #359 is resolved
+      name: biome JS check
       entry: biome check --write --files-ignore-unknown=true --no-errors-on-unmatched --colors=off
       language: system
       types: [javascript]
@@ -16,10 +18,12 @@ repos:
       types: [javascript]
       files: ^atr/static/js/src/.*\.js$
       args:
+        # These must be in the order deny, warn, allow
         - --deny=correctness
         - --deny=perf
         - --warn=suspicious
         - --warn=pedantic
+        - --allow=unicorn/prefer-query-selector
 - repo: https://github.com/oxipng/oxipng
   rev: v9.1.5
   hooks:
