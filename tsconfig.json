@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "es2021",
     "module": "commonjs",
     "rootDir": "./atr/static/ts",
-    "outDir": "./atr/static/js",
+    "outDir": "./atr/static/js/ts",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -11,5 +11,5 @@
     "sourceMap": true
   },
   "include": ["./atr/static/ts/**/*.ts"],
-  "exclude": ["./atr/static/js", "node_modules"]
+  "exclude": ["./atr/static/js/ts", "node_modules"]
 }

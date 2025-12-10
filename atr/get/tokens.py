@@ -82,7 +82,7 @@ async def tokens(session: web.Committer) -> str:
         title="Tokens",
         description="Manage your PATs and JWTs.",
         content=page.collect(),
-        javascripts=["create-a-jwt"],
+        typescripts=["create-a-jwt"],
     )
 
 

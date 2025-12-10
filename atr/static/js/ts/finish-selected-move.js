@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var ItemType;
 (function (ItemType) {
     ItemType["File"] = "file";
@@ -276,19 +267,19 @@ function handleDirRadio(radio) {
     }
 }
 function setState(partial) {
-    uiState = Object.assign(Object.assign({}, uiState), partial);
+    uiState = { ...uiState, ...partial };
     renderAllLists();
 }
 function onFileFilterInput(event) {
     const target = event.target;
     if (target instanceof HTMLInputElement) {
-        setState({ filters: Object.assign(Object.assign({}, uiState.filters), { file: target.value }) });
+        setState({ filters: { ...uiState.filters, file: target.value } });
     }
 }
 function onDirFilterInput(event) {
     const target = event.target;
     if (target instanceof HTMLInputElement) {
-        setState({ filters: Object.assign(Object.assign({}, uiState.filters), { dir: target.value }) });
+        setState({ filters: { ...uiState.filters, dir: target.value } });
     }
 }
 function onMaxFilesChange(event) {
@@ -306,60 +297,58 @@ function isErrorResponse(data) {
         (('message' in data && typeof data.message === 'string') ||
             ('error' in data && typeof data.error === 'string'));
 }
-function moveFiles(files, dest, csrfToken, signal) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const formData = new FormData();
-        formData.append("csrf_token", csrfToken);
-        formData.append("variant", "MOVE_FILE");
-        for (const file of files) {
-            formData.append("source_files", file);
+async function moveFiles(files, dest, csrfToken, signal) {
+    const formData = new FormData();
+    formData.append("csrf_token", csrfToken);
+    formData.append("variant", "MOVE_FILE");
+    for (const file of files) {
+        formData.append("source_files", file);
+    }
+    formData.append("target_directory", dest);
+    try {
+        const response = await fetch(window.location.pathname, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json",
+            },
+            signal,
+        });
+        if (response.ok) {
+            return { ok: true };
         }
-        formData.append("target_directory", dest);
-        try {
-            const response = yield fetch(window.location.pathname, {
-                method: "POST",
-                body: formData,
-                credentials: "same-origin",
-                headers: {
-                    "Accept": "application/json",
-                },
-                signal,
-            });
-            if (response.ok) {
-                return { ok: true };
+        else {
+            let errorMsg = `An error occurred while moving the file (Status: ${response.status})`;
+            if (response.status === 403)
+                errorMsg = "Permission denied to move the file.";
+            if (response.status === 400)
+                errorMsg = "Invalid request to move the file.";
+            if (signal?.aborted) {
+                errorMsg = "Move operation aborted.";
             }
-            else {
-                let errorMsg = `An error occurred while moving the file (Status: ${response.status})`;
-                if (response.status === 403)
-                    errorMsg = "Permission denied to move the file.";
-                if (response.status === 400)
-                    errorMsg = "Invalid request to move the file.";
-                if (signal === null || signal === void 0 ? void 0 : signal.aborted) {
-                    errorMsg = "Move operation aborted.";
-                }
-                try {
-                    const errorData = yield response.json();
-                    if (isErrorResponse(errorData)) {
-                        if (errorData.message) {
-                            errorMsg = errorData.message;
-                        }
-                        else if (errorData.error) {
-                            errorMsg = errorData.error;
-                        }
+            try {
+                const errorData = await response.json();
+                if (isErrorResponse(errorData)) {
+                    if (errorData.message) {
+                        errorMsg = errorData.message;
+                    }
+                    else if (errorData.error) {
+                        errorMsg = errorData.error;
                     }
                 }
-                catch ( /* Do nothing */_a) { /* Do nothing */ }
-                return { ok: false, message: errorMsg };
             }
+            catch { /* Do nothing */ }
+            return { ok: false, message: errorMsg };
         }
-        catch (error) {
-            // console.error("Network or fetch error:", error);
-            if (error instanceof Error && error.name === 'AbortError') {
-                return { ok: false, message: "Move operation aborted." };
-            }
-            return { ok: false, message: "A network error occurred. Please check your connection and try again." };
+    }
+    catch (error) {
+        // console.error("Network or fetch error:", error);
+        if (error instanceof Error && error.name === 'AbortError') {
+            return { ok: false, message: "Move operation aborted." };
         }
-    });
+        return { ok: false, message: "A network error occurred. Please check your connection and try again." };
+    }
 }
 function splitMoveCandidates(selected, dest) {
     const toMoveMutable = [];
@@ -374,42 +363,39 @@ function splitMoveCandidates(selected, dest) {
     }
     return { toMove: toMoveMutable, alreadyThere: alreadyThereMutable };
 }
-function onConfirmMoveClick() {
-    return __awaiter(this, void 0, void 0, function* () {
-        errorAlert.classList.add("d-none");
-        errorAlert.textContent = "";
-        const controller = new AbortController();
-        window.addEventListener("beforeunload", () => controller.abort());
-        if (uiState.currentlySelectedPaths.size > 0 && uiState.currentlyChosenDirectoryPath && uiState.csrfToken) {
-            const { toMove, alreadyThere: itemsAlreadyInDest } = splitMoveCandidates(uiState.currentlySelectedPaths, uiState.currentlyChosenDirectoryPath);
-            if (toMove.length === 0 && itemsAlreadyInDest.length > 0 && uiState.currentlySelectedPaths.size > 0) {
-                errorAlert.classList.remove("d-none");
-                errorAlert.textContent = `All selected items (${itemsAlreadyInDest.join(", ")}) are already in the target directory. No items were moved.`;
-                confirmMoveButton.disabled = false;
-                return;
-            }
-            if (itemsAlreadyInDest.length > 0) {
-                const alreadyInDestMsg = `Note: ${itemsAlreadyInDest.join(", ")} ${itemsAlreadyInDest.length === 1 ? "is" : "are"} already in the target directory and will not be moved.`;
-                const existingError = errorAlert.textContent;
-                errorAlert.textContent = existingError ? `${existingError} ${alreadyInDestMsg}` : alreadyInDestMsg;
-            }
-            const result = yield moveFiles(toMove, uiState.currentlyChosenDirectoryPath, uiState.csrfToken, controller.signal);
-            if (result.ok) {
-                window.location.reload();
-            }
-            else {
-                errorAlert.classList.remove("d-none");
-                errorAlert.textContent = result.message;
-            }
+async function onConfirmMoveClick() {
+    errorAlert.classList.add("d-none");
+    errorAlert.textContent = "";
+    const controller = new AbortController();
+    window.addEventListener("beforeunload", () => controller.abort());
+    if (uiState.currentlySelectedPaths.size > 0 && uiState.currentlyChosenDirectoryPath && uiState.csrfToken) {
+        const { toMove, alreadyThere: itemsAlreadyInDest } = splitMoveCandidates(uiState.currentlySelectedPaths, uiState.currentlyChosenDirectoryPath);
+        if (toMove.length === 0 && itemsAlreadyInDest.length > 0 && uiState.currentlySelectedPaths.size > 0) {
+            errorAlert.classList.remove("d-none");
+            errorAlert.textContent = `All selected items (${itemsAlreadyInDest.join(", ")}) are already in the target directory. No items were moved.`;
+            confirmMoveButton.disabled = false;
+            return;
+        }
+        if (itemsAlreadyInDest.length > 0) {
+            const alreadyInDestMsg = `Note: ${itemsAlreadyInDest.join(", ")} ${itemsAlreadyInDest.length === 1 ? "is" : "are"} already in the target directory and will not be moved.`;
+            const existingError = errorAlert.textContent;
+            errorAlert.textContent = existingError ? `${existingError} ${alreadyInDestMsg}` : alreadyInDestMsg;
+        }
+        const result = await moveFiles(toMove, uiState.currentlyChosenDirectoryPath, uiState.csrfToken, controller.signal);
+        if (result.ok) {
+            window.location.reload();
         }
         else {
             errorAlert.classList.remove("d-none");
-            errorAlert.textContent = "Please select item(s) and a destination directory.";
+            errorAlert.textContent = result.message;
         }
-    });
+    }
+    else {
+        errorAlert.classList.remove("d-none");
+        errorAlert.textContent = "Please select item(s) and a destination directory.";
+    }
 }
 document.addEventListener("DOMContentLoaded", () => {
-    var _a, _b, _c, _d;
     fileFilterInput = $(ID.fileFilter);
     fileListTableBody = $(ID.fileListTableBody);
     maxFilesInput = $(ID.maxFilesInput);
@@ -424,18 +410,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let initialFilePaths = [];
     let initialTargetDirs = [];
     try {
-        const fileData = (_a = document.getElementById(ID.fileData)) === null || _a === void 0 ? void 0 : _a.textContent;
+        const fileData = document.getElementById(ID.fileData)?.textContent;
         if (fileData)
             initialFilePaths = JSON.parse(fileData);
-        const dirData = (_b = document.getElementById(ID.dirData)) === null || _b === void 0 ? void 0 : _b.textContent;
+        const dirData = document.getElementById(ID.dirData)?.textContent;
         if (dirData)
             initialTargetDirs = JSON.parse(dirData);
     }
-    catch (_e) {
+    catch {
         // console.error("Error parsing JSON data:");
     }
-    const csrfToken = (_d = (_c = document
-        .querySelector(`#${ID.mainScriptData}`)) === null || _c === void 0 ? void 0 : _c.dataset.csrfToken) !== null && _d !== void 0 ? _d : null;
+    const csrfToken = document
+        .querySelector(`#${ID.mainScriptData}`)?.dataset.csrfToken ?? null;
     uiState = {
         filters: {
             file: fileFilterInput.value || "",

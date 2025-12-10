@@ -15,7 +15,7 @@ build-playwright:
 	docker build -t atr-playwright -f tests/Dockerfile.playwright playwright
 
 build-ts:
-	tsc -p tsconfig.json
+	tsgo --project ./tsconfig.json
 
 build-ubuntu:
 	scripts/build Dockerfile.ubuntu $(IMAGE)

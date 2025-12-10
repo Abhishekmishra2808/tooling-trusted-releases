@@ -7,16 +7,14 @@ repos:
       entry: biome check --write --files-ignore-unknown=true --no-errors-on-unmatched --colors=off
       language: system
       types: [javascript]
-      files: ^atr/static/js/.*\.js$
-      exclude: (.*\.min\.js$|.*\.ts\.js$)
+      files: ^atr/static/js/src/.*\.js$
 - repo: https://github.com/oxc-project/mirrors-oxlint
   rev: v1.32.0
   hooks:
     - id: oxlint
       name: oxlint JS linter
       types: [javascript]
-      files: "atr/static/js/.*\\.js$"
-      exclude: (.*\.min\.js$|.*\.ts\.js$)
+      files: ^atr/static/js/src/.*\.js$
       args:
         - --deny=correctness
         - --deny=perf

@@ -34,14 +34,16 @@ async def blank(
     content: str | htm.Element,
     description: str | None = None,
     javascripts: list[str] | None = None,
+    typescripts: list[str] | None = None,
 ) -> str:
-    js_urls = [util.static_url(f"js/{name}.js") for name in javascripts or []]
+    js_urls = [util.static_url(f"js/src/{name}.js") for name in javascripts or []]
+    ts_urls = [util.static_url(f"js/ts/{name}.js") for name in typescripts or []]
     return await render_sync(
         "blank.html",
         title=title,
         description=description or title,
         content=content,
-        javascripts=js_urls,
+        javascripts=js_urls + ts_urls,
     )
 
 

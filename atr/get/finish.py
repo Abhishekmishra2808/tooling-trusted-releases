@@ -330,7 +330,7 @@ async def _render_page(
     page.append(
         htpy.script(
             id="main-script-data",
-            src=util.static_url("js/finish-selected-move.js"),
+            src=util.static_url("js/ts/finish-selected-move.js"),
             **{"data-csrf-token": csrf_token},
         )[""]
     )
