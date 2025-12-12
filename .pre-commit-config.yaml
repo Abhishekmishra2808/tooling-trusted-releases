@@ -38,6 +38,15 @@ repos:
         - --license-filepath
         - scripts/ci/LICENSE-template.txt
         - --fuzzy-match-generates-todo
+    - id: insert-license
+      name: Add license for JS and TS files
+      files: ^atr/static/(js/src/.*\.js|ts/.*\.ts)$
+      args:
+        - --comment-style
+        - "/*| * |*/"
+        - --license-filepath
+        - scripts/ci/LICENSE-template.txt
+        - --fuzzy-match-generates-todo
 - repo: https://github.com/igorshubovych/markdownlint-cli
   rev: v0.46.0
   hooks:
