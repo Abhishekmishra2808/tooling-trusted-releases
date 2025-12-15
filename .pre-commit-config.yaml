@@ -20,7 +20,7 @@ repos:
     - id: check-yaml
     - id: detect-private-key
     - id: end-of-file-fixer
-      exclude: ^atr/static/js/(ts|min)/
+      exclude: ^atr/static/js/(ts|min)/|\.map$
     - id: fix-byte-order-marker
     - id: forbid-submodules
     - id: mixed-line-ending
