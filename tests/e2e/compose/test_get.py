@@ -97,7 +97,7 @@ def test_start_vote_button_enabled_when_tasks_complete(page_compose: Page) -> No
 def test_start_vote_button_has_href(page_compose: Page) -> None:
     """The start vote button should have an href attribute set."""
     vote_button = page_compose.locator("#start-vote-button")
-    expect(vote_button).to_have_attribute("href", re.compile(r"/voting/test/0\.1\+compose/\d+"))
+    expect(vote_button).to_have_attribute("href", re.compile(r"/voting/test/0\.1\+e2e-compose/\d+"))
 
 
 def test_start_vote_button_has_title(page_compose: Page) -> None:

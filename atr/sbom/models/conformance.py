@@ -61,7 +61,7 @@ class MissingComponentProperty(Strict):
     index: int | None = None
 
     def __str__(self) -> str:
-        if self.index is None or self.component is None:
+        if (self.index is None) or (self.component is None):
             comp = "primary component"
         else:
             comp = self.component

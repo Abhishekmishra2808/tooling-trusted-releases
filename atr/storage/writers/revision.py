@@ -31,6 +31,7 @@ import aioshutil
 
 import atr.db as db
 import atr.db.interaction as interaction
+import atr.detection as detection
 import atr.models.sql as sql
 import atr.storage as storage
 import atr.storage.types as types
@@ -141,6 +142,12 @@ class CommitteeParticipant(FoundationCommitter):
         except Exception:
             await aioshutil.rmtree(temp_dir)
             raise
+
+        validation_errors = await asyncio.to_thread(detection.validate_directory, temp_dir_path)
+        if validation_errors:
+            await aioshutil.rmtree(temp_dir)
+            creating.failed = types.FailedError("File validation failed:\n" + "\n".join(validation_errors))
+            return
 
         # Ensure that the permissions of every directory are 755
         try:

@@ -194,7 +194,7 @@ Maintain modules with a reasonable number of interfaces. Though no strict limits
 
 ### Sort functions alphabetically
 
-Wherever possible, the order of functions within each module should be alphabetical by name. Take advantage of this convention by grouping related functions under a common prefix (including grouping helper functions with their caller), and using numbers in the names of functions called in serial order.
+Wherever possible, the order of functions within each module should be alphabetical by name. Take advantage of this convention by grouping related functions under a common prefix (including grouping helper functions with their caller), and using numbers in the names of functions called in serial order. As an exception to this rule, underscored (and hence private) functions are sorted below public functions.
 
 ### Keep cyclomatic complexity below 10
 

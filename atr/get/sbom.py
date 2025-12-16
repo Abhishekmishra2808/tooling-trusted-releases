@@ -162,7 +162,7 @@ def _missing_table(block: htm.Block, items: list[sbom.models.conformance.Missing
         htm.tr[
             htm.td[
                 kind.upper()
-                if len(components) == 0
+                if (len(components) == 0)
                 else htm.details[htm.summary[kind.upper()], htm.div[_detail_table(components)]]
             ],
             htm.td[prop],
