@@ -17,6 +17,7 @@
 
 
 import asyncio
+from typing import Final
 
 import aiohttp
 import asfquart.base as base
@@ -34,6 +35,8 @@ import atr.storage.outcome as outcome
 import atr.storage.types as types
 import atr.util as util
 import atr.web as web
+
+_KEYS_BASE_URL: Final[str] = "https://downloads.apache.org"
 
 
 @post.committer("/keys/add")
@@ -179,41 +182,18 @@ async def ssh_add(session: web.Committer, add_ssh_key_form: shared.keys.AddSSHKe
 @post.committer("/keys/upload")
 @post.form(shared.keys.UploadKeysForm)
 async def upload(session: web.Committer, upload_form: shared.keys.UploadKeysForm) -> str:
-    """Upload a KEYS file containing multiple OpenPGP keys."""
-    keys_text = ""
+    """Upload or fetch a KEYS file containing multiple OpenPGP keys."""
+    match upload_form:
+        case shared.keys.UploadFileForm() as upload_file_form:
+            return await _upload_file_keys(upload_file_form)
+        case shared.keys.UploadRemoteForm() as upload_remote_form:
+            return await _upload_remote_keys(upload_remote_form)
 
-    try:
-        if upload_form.key:
-            keys_content = await asyncio.to_thread(upload_form.key.read)
-            keys_text = keys_content.decode("utf-8", errors="replace")
-        elif upload_form.keys_url:
-            keys_text = await _fetch_keys_from_url(str(upload_form.keys_url))
 
-        if not keys_text:
-            await quart.flash("No KEYS data found", "error")
-            return await shared.keys.render_upload_page(error=True)
-
-        selected_committee = upload_form.selected_committee
-
-        async with storage.write() as write:
-            wacp = write.as_committee_participant(selected_committee)
-            outcomes = await wacp.keys.ensure_associated(keys_text)
-
-        success_count = outcomes.result_count
-        error_count = outcomes.error_count
-        total_count = success_count + error_count
-
-        message = f"Processed {total_count} keys: {success_count} successful"
-        if error_count > 0:
-            message += f", {error_count} failed"
-
-        await quart.flash(message, "success" if (success_count > 0) else "error")
-
-        return await shared.keys.render_upload_page(results=outcomes, submitted_committees=[selected_committee])
-    except Exception as e:
-        log.exception("Error uploading KEYS file:")
-        await quart.flash(f"Error processing KEYS file: {e!s}", "error")
-        return await shared.keys.render_upload_page(error=True)
+def _construct_keys_url(committee_name: str, *, is_podling: bool) -> str:
+    if is_podling:
+        return f"{_KEYS_BASE_URL}/incubator/{committee_name}/KEYS"
+    return f"{_KEYS_BASE_URL}/{committee_name}/KEYS"
 
 
 async def _delete_openpgp_key(
@@ -247,10 +227,36 @@ async def _delete_ssh_key(session: web.Committer, delete_form: shared.keys.Delet
     return await session.redirect(get.keys.keys, success="SSH key deleted successfully")
 
 
-async def _fetch_keys_from_url(keys_url: str) -> str:
-    """Fetch KEYS file content from a URL."""
+async def _upload_remote_keys(upload_remote_form: shared.keys.UploadRemoteForm) -> str:
+    """Fetch KEYS file from ASF downloads."""
     try:
-        async with aiohttp.ClientSession() as session:
+        selected_committee = upload_remote_form.committee
+        async with db.session() as data:
+            committee = await data.committee(name=selected_committee).get()
+            if not committee:
+                await quart.flash(f"Committee '{selected_committee}' not found", "error")
+                return await shared.keys.render_upload_page(error=True)
+            is_podling = committee.is_podling
+
+        keys_url = _construct_keys_url(selected_committee, is_podling=is_podling)
+        keys_text = await _fetch_keys_from_url(keys_url)
+
+        if not keys_text:
+            await quart.flash("No KEYS data found at ASF downloads", "error")
+            return await shared.keys.render_upload_page(error=True)
+
+        return await _process_keys(keys_text, selected_committee)
+    except Exception as e:
+        log.exception("Error fetching KEYS file from ASF:")
+        await quart.flash(f"Error fetching KEYS file: {e!s}", "error")
+        return await shared.keys.render_upload_page(error=True)
+
+
+async def _fetch_keys_from_url(keys_url: str) -> str:
+    """Fetch KEYS file from ASF downloads."""
+    try:
+        timeout = aiohttp.ClientTimeout(total=30)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(keys_url, allow_redirects=True) as response:
                 response.raise_for_status()
                 return await response.text()
@@ -258,6 +264,25 @@ async def _fetch_keys_from_url(keys_url: str) -> str:
         raise base.ASFQuartException(f"Unable to fetch keys from remote server: {e.status} {e.message}", errorcode=502)
     except aiohttp.ClientError as e:
         raise base.ASFQuartException(f"Network error while fetching keys: {e}", errorcode=503)
+
+
+async def _process_keys(keys_text: str, selected_committee: str) -> str:
+    """Process keys text and associate with committee."""
+    async with storage.write() as write:
+        wacp = write.as_committee_participant(selected_committee)
+        outcomes = await wacp.keys.ensure_associated(keys_text)
+
+    success_count = outcomes.result_count
+    error_count = outcomes.error_count
+    total_count = success_count + error_count
+
+    message = f"Processed {total_count} keys: {success_count} successful"
+    if error_count > 0:
+        message += f", {error_count} failed"
+
+    await quart.flash(message, "success" if (success_count > 0) else "error")
+
+    return await shared.keys.render_upload_page(results=outcomes, submitted_committees=[selected_committee])
 
 
 async def _update_committee_keys(
@@ -277,3 +302,25 @@ async def _update_committee_keys(
                 await quart.flash(f"Error regenerating the KEYS file for the {committee_name} committee.", "error")
 
     return await session.redirect(get.keys.keys)
+
+
+async def _upload_file_keys(upload_file_form: shared.keys.UploadFileForm) -> str:
+    """Handle file upload."""
+    try:
+        if upload_file_form.key is None:
+            await quart.flash("No KEYS file uploaded", "error")
+            return await shared.keys.render_upload_page(error=True)
+
+        keys_content = await asyncio.to_thread(upload_file_form.key.read)
+        keys_text = keys_content.decode("utf-8", errors="replace")
+
+        if not keys_text:
+            await quart.flash("No KEYS data found", "error")
+            return await shared.keys.render_upload_page(error=True)
+
+        selected_committee = upload_file_form.selected_committee
+        return await _process_keys(keys_text, selected_committee)
+    except Exception as e:
+        log.exception("Error uploading KEYS file:")
+        await quart.flash(f"Error processing KEYS file: {e!s}", "error")
+        return await shared.keys.render_upload_page(error=True)

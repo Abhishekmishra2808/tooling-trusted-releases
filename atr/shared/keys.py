@@ -19,7 +19,6 @@
 
 from typing import Annotated, Literal
 
-import htpy
 import markupsafe
 import pydantic
 
@@ -33,7 +32,9 @@ import atr.util as util
 
 type DELETE_OPENPGP_KEY = Literal["delete_openpgp_key"]
 type DELETE_SSH_KEY = Literal["delete_ssh_key"]
+type UPLOAD_REMOTE_KEYS = Literal["upload_remote_keys"]
 type UPDATE_COMMITTEE_KEYS = Literal["update_committee_keys"]
+type UPLOAD_FILE_KEYS = Literal["upload_file_keys"]
 
 
 class AddOpenPGPKeyForm(form.Form):
@@ -91,18 +92,13 @@ class UpdateKeyCommitteesForm(form.Form):
     )
 
 
-class UploadKeysForm(form.Form):
+class UploadFileForm(form.Form):
+    variant: UPLOAD_FILE_KEYS = form.value(UPLOAD_FILE_KEYS)
     key: form.File = form.label(
         "KEYS file",
         "Upload a KEYS file containing multiple PGP public keys."
         " The file should contain keys in ASCII-armored format, starting with"
         ' "-----BEGIN PGP PUBLIC KEY BLOCK-----".',
-        widget=form.Widget.CUSTOM,
-    )
-    keys_url: form.OptionalURL = form.label(
-        "KEYS file URL",
-        "Enter a URL to a KEYS file. This will be fetched by the server.",
-        widget=form.Widget.CUSTOM,
     )
     selected_committee: str = form.label(
         "Associate keys with committee",
@@ -111,12 +107,86 @@ class UploadKeysForm(form.Form):
     )
 
     @pydantic.model_validator(mode="after")
-    def validate_key_source(self) -> "UploadKeysForm":
-        if (not self.key) and (not self.keys_url):
-            raise ValueError("Either a file or a URL is required")
-        if self.key and self.keys_url:
-            raise ValueError("Provide either a file or a URL, not both")
+    def validate_key_required(self) -> "UploadFileForm":
+        if not self.key:
+            raise ValueError("A KEYS file is required")
         return self
+
+
+class UploadRemoteForm(form.Form):
+    variant: UPLOAD_REMOTE_KEYS = form.value(UPLOAD_REMOTE_KEYS)
+    committee: str = form.label(
+        "Committee",
+        "Select the committee whose KEYS file to fetch from ASF downloads.",
+        widget=form.Widget.RADIO,
+    )
+
+
+type UploadKeysForm = Annotated[
+    UploadFileForm | UploadRemoteForm,
+    form.DISCRIMINATOR,
+]
+
+
+async def render_upload_page(
+    results: storage.outcome.List | None = None,
+    submitted_committees: list[str] | None = None,
+    error: bool = False,
+) -> str:
+    """Render the upload page with optional results."""
+    import atr.get as get
+    import atr.post as post
+
+    async with storage.write() as write:
+        participant_of_committees = await write.participant_of_committees()
+
+    eligible_committees = [
+        c for c in participant_of_committees if (not util.committee_is_standing(c.name)) or (c.name == "tooling")
+    ]
+
+    committee_choices = [(c.name, c.display_name) for c in eligible_committees]
+    committee_map = {c.name: c.display_name for c in eligible_committees}
+
+    page = htm.Block()
+    page.p[htm.a(".atr-back-link", href=util.as_url(get.keys.keys))["← Back to Manage keys"]]
+    page.h1["Import KEYS"]
+    page.p["Import OpenPGP public signing keys from a KEYS file."]
+
+    if results and submitted_committees:
+        page.append(_get_results_table_css())
+        _render_results_table(page, results, submitted_committees, committee_map)
+
+    page.h2["Upload a file"]
+    page.p["Upload a KEYS file from your computer."]
+
+    form.render_block(
+        page,
+        model_cls=shared.keys.UploadFileForm,
+        action=util.as_url(post.keys.upload),
+        submit_label="Upload KEYS file",
+        defaults={"selected_committee": committee_choices},
+        border=True,
+        wider_widgets=True,
+    )
+
+    page.h2(".mt-5")["Fetch existing KEYS file"]
+    page.p["Fetch the KEYS file from the ASF downloads server for the selected committee."]
+
+    form.render_block(
+        page,
+        model_cls=shared.keys.UploadRemoteForm,
+        action=util.as_url(post.keys.upload),
+        submit_label="Fetch KEYS file",
+        defaults={"committee": committee_choices},
+        border=True,
+        wider_widgets=True,
+    )
+
+    return await template.blank(
+        "Import KEYS",
+        content=page.collect(),
+        description="Import OpenPGP public signing keys from a KEYS file.",
+    )
 
 
 def _get_results_table_css() -> htm.Element:
@@ -246,111 +316,3 @@ def _render_results_table(
         for outcome in processing_errors:
             err = outcome.error_or_none()
             page.div(".alert.alert-danger.p-2.mb-3")[str(err)]
-
-
-async def render_upload_page(
-    results: storage.outcome.List | None = None,
-    submitted_committees: list[str] | None = None,
-    error: bool = False,
-) -> str:
-    """Render the upload page with optional results."""
-    import atr.get as get
-    import atr.post as post
-
-    async with storage.write() as write:
-        participant_of_committees = await write.participant_of_committees()
-
-    eligible_committees = [
-        c for c in participant_of_committees if (not util.committee_is_standing(c.name)) or (c.name == "tooling")
-    ]
-
-    committee_choices = [(c.name, c.display_name) for c in eligible_committees]
-    committee_map = {c.name: c.display_name for c in eligible_committees}
-
-    page = htm.Block()
-    page.p[htm.a(".atr-back-link", href=util.as_url(get.keys.keys))["← Back to Manage keys"]]
-    page.h1["Upload a KEYS file"]
-    page.p["Upload a KEYS file containing multiple OpenPGP public signing keys."]
-
-    if results and submitted_committees:
-        page.append(_get_results_table_css())
-        _render_results_table(page, results, submitted_committees, committee_map)
-
-    custom_tabs_widget = _render_upload_tabs()
-
-    form.render_block(
-        page,
-        model_cls=shared.keys.UploadKeysForm,
-        action=util.as_url(post.keys.upload),
-        submit_label="Upload KEYS file",
-        cancel_url=util.as_url(get.keys.keys),
-        defaults={"selected_committee": committee_choices},
-        custom={"key": custom_tabs_widget},
-        skip=["keys_url"],
-        border=True,
-        wider_widgets=True,
-    )
-
-    return await template.blank(
-        "Upload a KEYS file",
-        content=page.collect(),
-        description="Upload a KEYS file containing multiple OpenPGP public signing keys.",
-    )
-
-
-def _render_upload_tabs() -> htm.Element:
-    """Render the tabbed interface for file upload or URL input."""
-    tabs_ul = htm.ul(".nav.nav-tabs", id="keysUploadTab", role="tablist")[
-        htm.li(".nav-item", role="presentation")[
-            htpy.button(
-                class_="nav-link active",
-                id="file-upload-tab",
-                data_bs_toggle="tab",
-                data_bs_target="#file-upload-pane",
-                type="button",
-                role="tab",
-                aria_controls="file-upload-pane",
-                aria_selected="true",
-            )["Upload from file"]
-        ],
-        htm.li(".nav-item", role="presentation")[
-            htpy.button(
-                class_="nav-link",
-                id="url-upload-tab",
-                data_bs_toggle="tab",
-                data_bs_target="#url-upload-pane",
-                type="button",
-                role="tab",
-                aria_controls="url-upload-pane",
-                aria_selected="false",
-            )["Upload from URL"]
-        ],
-    ]
-
-    file_pane = htm.div(".tab-pane.fade.show.active", id="file-upload-pane", role="tabpanel")[
-        htm.div(".pt-3")[
-            htpy.input(class_="form-control", id="key", name="key", type="file"),
-            htm.div(".form-text.text-muted.mt-2")[
-                "Upload a KEYS file containing multiple PGP public keys. The file should contain keys in "
-                'ASCII-armored format, starting with "-----BEGIN PGP PUBLIC KEY BLOCK-----".'
-            ],
-        ]
-    ]
-
-    url_pane = htm.div(".tab-pane.fade", id="url-upload-pane", role="tabpanel")[
-        htm.div(".pt-3")[
-            htpy.input(
-                class_="form-control",
-                id="keys_url",
-                name="keys_url",
-                placeholder="Enter URL to KEYS file",
-                type="url",
-                value="",
-            ),
-            htm.div(".form-text.text-muted.mt-2")["Enter a URL to a KEYS file. This will be fetched by the server."],
-        ]
-    ]
-
-    tab_content = htm.div(".tab-content", id="keysUploadTabContent")[file_pane, url_pane]
-
-    return htm.div[tabs_ul, tab_content]
