@@ -160,11 +160,15 @@ def _extract_vulnerability_severity(vuln: dict[str, Any]) -> str:
 def _missing_table(block: htm.Block, items: list[sbom.models.conformance.Missing]) -> None:
     warning_rows = [
         htm.tr[
-            htm.td[kind.upper()],
+            htm.td[
+                kind.upper()
+                if len(components) == 0
+                else htm.details[htm.summary[kind.upper()], htm.div[_detail_table(components)]]
+            ],
             htm.td[prop],
             htm.td[str(count)],
         ]
-        for kind, prop, count in _missing_tally(items)
+        for kind, prop, count, components in _missing_tally(items)
     ]
     block.table(".table.table-sm.table-bordered.table-striped")[
         htm.thead[htm.tr[htm.th["Kind"], htm.th["Property"], htm.th["Count"]]],
@@ -172,13 +176,24 @@ def _missing_table(block: htm.Block, items: list[sbom.models.conformance.Missing
     ]
 
 
-def _missing_tally(items: list[sbom.models.conformance.Missing]) -> list[tuple[str, str, int]]:
+def _detail_table(components: list[str | None]):
+    return htm.table(".table.table-sm.table-bordered.table-striped")[
+        htm.tbody[[htm.tr[htm.td[comp.capitalize()]] for comp in components if comp is not None]],
+    ]
+
+
+def _missing_tally(items: list[sbom.models.conformance.Missing]) -> list[tuple[str, str, int, list[str | None]]]:
     counts: dict[tuple[str, str], int] = {}
+    components: dict[tuple[str, str], list[str | None]] = {}
     for item in items:
         key = (getattr(item, "kind", ""), getattr(getattr(item, "property", None), "name", ""))
         counts[key] = counts.get(key, 0) + 1
+        if key not in components:
+            components[key] = [str(item)]
+        elif item.kind == "missing_component_property":
+            components[key].append(str(item))
     return sorted(
-        [(kind, prop, count) for (kind, prop), count in counts.items()],
+        [(item, prop, count, components.get((item, prop), [])) for (item, prop), count in counts.items()],
         key=lambda kv: (kv[0], kv[1]),
     )
 

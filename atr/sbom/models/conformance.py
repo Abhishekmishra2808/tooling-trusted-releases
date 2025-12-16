@@ -61,9 +61,11 @@ class MissingComponentProperty(Strict):
     index: int | None = None
 
     def __str__(self) -> str:
-        if self.index is None:
-            return f"missing {self.property.name} in primary component"
-        return f"missing {self.property.name} in component {self.index}"
+        if self.index is None or self.component is None:
+            comp = "primary component"
+        else:
+            comp = self.component
+        return f"missing {self.property.name} in {comp}"
 
     @pydantic.field_validator("property", mode="before")
     @classmethod
