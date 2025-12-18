@@ -15,7 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import secrets
 from collections.abc import Sequence
+
+import htpy
 
 import atr.blueprints.get as get
 import atr.db as db
@@ -63,12 +66,26 @@ async def selected(session: web.Committer, project_name: str, version_name: str)
     block.h2(id="file-upload")["File upload"]
     block.p["Use this form to add files to this candidate draft."]
 
+    upload_session_token = secrets.token_hex(16)
+    stage_url = f"/upload/stage/{project_name}/{version_name}/{upload_session_token}"
+    finalise_url = f"/upload/finalise/{project_name}/{version_name}/{upload_session_token}"
+
+    block.append(
+        htpy.div(
+            "#upload-config.atr-hide",
+            data_stage_url=stage_url,
+            data_finalise_url=finalise_url,
+        )
+    )
+
     form.render_block(
         block,
         model_cls=shared.upload.AddFilesForm,
         submit_label="Add files",
         form_classes=".atr-canary.py-4.px-5",
     )
+
+    block.append(htpy.div("#upload-progress-container.d-none"))
 
     block.h2(id="svn-upload")["SVN upload"]
     block.p["Import files from this project's ASF Subversion repository into this draft."]
@@ -114,6 +131,7 @@ async def selected(session: web.Committer, project_name: str, version_name: str)
     return await template.blank(
         f"Upload files to {release.short_display_name}",
         content=block.collect(),
+        javascripts=["upload-progress-ui", "upload-progress"],
     )
 
 
@@ -136,7 +154,7 @@ def _render_ssh_keys_info(block: htm.Block, user_ssh_keys: Sequence[sql.SSHKey])
     if key_count == 1:
         key = user_ssh_keys[0]
         key_parts = key.key.split(" ", 2)
-        key_comment = key_parts[2].strip() if len(key_parts) > 2 else "key"
+        key_comment = key_parts[2].strip() if (len(key_parts) > 2) else "key"
         block.p[
             "We have the SSH key ",
             htm.a(
@@ -152,7 +170,7 @@ def _render_ssh_keys_info(block: htm.Block, user_ssh_keys: Sequence[sql.SSHKey])
         key_items = []
         for key in user_ssh_keys:
             key_parts = key.key.split(" ", 2)
-            key_comment = key_parts[2].strip() if len(key_parts) > 2 else "key"
+            key_comment = key_parts[2].strip() if (len(key_parts) > 2) else "key"
             key_items.append(
                 htm.li[
                     htm.a(

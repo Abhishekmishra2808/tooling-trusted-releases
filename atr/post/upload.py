@@ -15,10 +15,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
+import asyncio
+import json
+import pathlib
 from typing import Final
 
+import aiofiles
+import aiofiles.os
+import aioshutil
 import quart
+import werkzeug.wrappers.response as response
 
 import atr.blueprints.post as post
 import atr.db as db
@@ -26,9 +32,59 @@ import atr.get as get
 import atr.log as log
 import atr.shared as shared
 import atr.storage as storage
+import atr.util as util
 import atr.web as web
 
 _SVN_BASE_URL: Final[str] = "https://dist.apache.org/repos/dist"
+
+
+@post.committer("/upload/finalise/<project_name>/<version_name>/<upload_session>")
+async def finalise(
+    session: web.Committer, project_name: str, version_name: str, upload_session: str
+) -> web.WerkzeugResponse:
+    await session.check_access(project_name)
+
+    try:
+        staging_dir = util.get_upload_staging_dir(upload_session)
+    except ValueError:
+        return _json_error("Invalid session token", 400)
+
+    if not await aiofiles.os.path.isdir(staging_dir):
+        return _json_error("No staged files found", 400)
+
+    try:
+        staged_files = await aiofiles.os.listdir(staging_dir)
+    except OSError:
+        return _json_error("Error reading staging directory", 500)
+
+    staged_files = [f for f in staged_files if f not in (".", "..")]
+    if not staged_files:
+        return _json_error("No staged files found", 400)
+
+    try:
+        async with storage.write(session) as write:
+            wacp = await write.as_project_committee_participant(project_name)
+            number_of_files = len(staged_files)
+            plural = "s" if number_of_files != 1 else ""
+            description = f"Upload of {number_of_files} file{plural} through web interface"
+
+            async with wacp.release.create_and_manage_revision(project_name, version_name, description) as creating:
+                for filename in staged_files:
+                    src = staging_dir / filename
+                    dst = creating.interim_path / filename
+                    await aioshutil.move(str(src), str(dst))
+
+        await aioshutil.rmtree(staging_dir)
+
+        return await session.redirect(
+            get.compose.selected,
+            success=f"{number_of_files} file{plural} added successfully",
+            project_name=project_name,
+            version_name=version_name,
+        )
+    except Exception as e:
+        log.exception("Error finalising upload:")
+        return _json_error(f"Error finalising upload: {e!s}", 500)
 
 
 @post.committer("/upload/<project_name>/<version_name>")
@@ -44,6 +100,46 @@ async def selected(
 
         case shared.upload.SvnImportForm() as svn_form:
             return await _svn_import(session, svn_form, project_name, version_name)
+
+
+@post.committer("/upload/stage/<project_name>/<version_name>/<upload_session>")
+async def stage(
+    session: web.Committer, project_name: str, version_name: str, upload_session: str
+) -> web.WerkzeugResponse:
+    await session.check_access(project_name)
+
+    try:
+        staging_dir = util.get_upload_staging_dir(upload_session)
+    except ValueError:
+        return _json_error("Invalid session token", 400)
+
+    files = await quart.request.files
+    file = files.get("file")
+    if (not file) or (not file.filename):
+        return _json_error("No file provided", 400)
+
+    filename = pathlib.Path(file.filename).name
+    if (not filename) or (filename in (".", "..")):
+        return _json_error("Invalid filename", 400)
+
+    await aiofiles.os.makedirs(staging_dir, exist_ok=True)
+
+    target_path = staging_dir / filename
+    if await aiofiles.os.path.exists(target_path):
+        return _json_error("File already exists in staging", 409)
+
+    try:
+        async with aiofiles.open(target_path, "wb") as f:
+            # 1 MiB chunks
+            while chunk := await asyncio.to_thread(file.stream.read, 1024 * 1024):
+                await f.write(chunk)
+    except Exception as e:
+        log.exception("Error staging file:")
+        if await aiofiles.os.path.exists(target_path):
+            await aiofiles.os.remove(target_path)
+        return _json_error(f"Error staging file: {e!s}", 500)
+
+    return _json_success({"status": "staged", "filename": filename})
 
 
 async def _add_files(
@@ -78,6 +174,14 @@ def _construct_svn_url(project_name: str, area: shared.upload.SvnArea, path: str
     if is_podling:
         return f"{_SVN_BASE_URL}/{area.value}/incubator/{project_name}/{path}"
     return f"{_SVN_BASE_URL}/{area.value}/{project_name}/{path}"
+
+
+def _json_error(message: str, status: int) -> web.WerkzeugResponse:
+    return response.Response(json.dumps({"error": message}), status=status, mimetype="application/json")
+
+
+def _json_success(data: dict[str, str], status: int = 200) -> web.WerkzeugResponse:
+    return response.Response(json.dumps(data), status=status, mimetype="application/json")
 
 
 async def _svn_import(

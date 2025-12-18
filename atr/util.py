@@ -482,6 +482,12 @@ def get_unfinished_dir() -> pathlib.Path:
     return pathlib.Path(config.get().UNFINISHED_STORAGE_DIR)
 
 
+def get_upload_staging_dir(session_token: str) -> pathlib.Path:
+    if not session_token.isalnum():
+        raise ValueError("Invalid session token")
+    return get_tmp_dir() / "upload-staging" / session_token
+
+
 async def get_urls_as_completed(urls: Sequence[str]) -> AsyncGenerator[tuple[str, int | str | None, bytes]]:
     """GET a list of URLs in parallel and yield (url, status, content_bytes) as they become available."""
     async with aiohttp.ClientSession() as session:
