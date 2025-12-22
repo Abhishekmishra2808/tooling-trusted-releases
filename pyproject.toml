@@ -18,6 +18,7 @@ dependencies = [
   "alembic~=1.14",
   "asfquart @ git+https://github.com/apache/infrastructure-asfquart.git@main",
   "asyncssh>=2.20.0,<3.0.0",
+  "blake3>=1.0.8",
   "blockbuster>=1.5.23,<2.0.0",
   "cmarkgfm>=2024.11.20",
   "cryptography~=44.0",

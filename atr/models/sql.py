@@ -857,6 +857,7 @@ class CheckResult(sqlmodel.SQLModel, table=True):
     data: Any = sqlmodel.Field(
         sa_column=sqlalchemy.Column(sqlalchemy.JSON), **example({"expected": "...", "found": "..."})
     )
+    input_hash: str | None = sqlmodel.Field(default=None, index=True, **example("blake3:7f83b1657ff1fc..."))
 
 
 class CheckResultIgnore(sqlmodel.SQLModel, table=True):

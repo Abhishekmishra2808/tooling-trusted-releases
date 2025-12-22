@@ -158,6 +158,10 @@ async def headers(args: checks.FunctionArguments) -> results.Results | None:
     if await recorder.primary_path_is_binary():
         return None
 
+    if await recorder.check_cache(artifact_abs_path):
+        log.info(f"Using cached license headers result for {artifact_abs_path} (rel: {args.primary_rel_path})")
+        return None
+
     log.info(f"Checking license headers for {artifact_abs_path} (rel: {args.primary_rel_path})")
 
     async with db.session() as data:

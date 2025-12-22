@@ -21,8 +21,11 @@ import dataclasses
 import datetime
 import functools
 import pathlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
+import aiofiles
+import aiofiles.os
+import blake3
 import sqlmodel
 
 if TYPE_CHECKING:
@@ -33,6 +36,8 @@ if TYPE_CHECKING:
 import atr.db as db
 import atr.models.sql as sql
 import atr.util as util
+
+_HASH_CHUNK_SIZE: Final[int] = 4 * 1024 * 1024
 
 
 # Pydantic does not like Callable types, so we use a dataclass instead
@@ -57,6 +62,8 @@ class Recorder:
     member_rel_path: str | None
     revision: str
     afresh: bool
+    __cached: bool
+    __input_hash: str | None
 
     def __init__(
         self,
@@ -76,6 +83,8 @@ class Recorder:
         self.afresh = afresh
         self.constructed = False
         self.member_problems: dict[sql.CheckResultStatus, int] = {}
+        self.__cached = False
+        self.__input_hash = None
 
         self.project_name = project_name
         self.version_name = version_name
@@ -129,6 +138,7 @@ class Recorder:
             status=status,
             message=message,
             data=data,
+            input_hash=self.__input_hash,
         )
 
         # It would be more efficient to keep a session open
@@ -186,6 +196,48 @@ class Recorder:
         abs_path = await self.abs_path()
         return matches(str(abs_path))
 
+    @property
+    def cached(self) -> bool:
+        return self.__cached
+
+    async def check_cache(self, path: pathlib.Path) -> bool:
+        if not await aiofiles.os.path.isfile(path):
+            return False
+
+        self.__input_hash = await _compute_file_hash(path)
+
+        async with db.session() as data:
+            stmt = (
+                sqlmodel.select(sql.CheckResult)
+                .where(sql.CheckResult.checker == self.checker)
+                .where(sql.CheckResult.input_hash == self.__input_hash)
+                .where(sql.CheckResult.primary_rel_path == self.primary_rel_path)
+            )
+            results = await data.execute(stmt)
+            cached_results = results.scalars().all()
+
+            if not cached_results:
+                return False
+
+            for cached in cached_results:
+                new_result = sql.CheckResult(
+                    release_name=self.release_name,
+                    revision_number=self.revision_number,
+                    checker=self.checker,
+                    primary_rel_path=self.primary_rel_path,
+                    member_rel_path=cached.member_rel_path,
+                    created=datetime.datetime.now(datetime.UTC),
+                    status=cached.status,
+                    message=cached.message,
+                    data=cached.data,
+                    input_hash=self.__input_hash,
+                )
+                data.add(new_result)
+            await data.commit()
+
+        self.__cached = True
+        return True
+
     async def clear(self, primary_rel_path: str | None = None, member_rel_path: str | None = None) -> None:
         async with db.session() as data:
             stmt = sqlmodel.delete(sql.CheckResult).where(
@@ -197,6 +249,10 @@ class Recorder:
             )
             await data.execute(stmt)
             await data.commit()
+
+    @property
+    def input_hash(self) -> str | None:
+        return self.__input_hash
 
     async def exception(
         self, message: str, data: Any, primary_rel_path: str | None = None, member_rel_path: str | None = None
@@ -259,3 +315,11 @@ def with_model(cls: type[schema.Strict]) -> Callable[[Callable[..., Any]], Calla
         return wrapper
 
     return decorator
+
+
+async def _compute_file_hash(path: pathlib.Path) -> str:
+    hasher = blake3.blake3()
+    async with aiofiles.open(path, "rb") as f:
+        while chunk := await f.read(_HASH_CHUNK_SIZE):
+            hasher.update(chunk)
+    return f"blake3:{hasher.hexdigest()}"

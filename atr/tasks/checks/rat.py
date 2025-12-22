@@ -53,6 +53,10 @@ async def check(args: checks.FunctionArguments) -> results.Results | None:
         log.info(f"Skipping RAT check for binary artifact {artifact_abs_path} (rel: {args.primary_rel_path})")
         return None
 
+    if await recorder.check_cache(artifact_abs_path):
+        log.info(f"Using cached RAT result for {artifact_abs_path} (rel: {args.primary_rel_path})")
+        return None
+
     log.info(f"Checking RAT licenses for {artifact_abs_path} (rel: {args.primary_rel_path})")
 
     try:
