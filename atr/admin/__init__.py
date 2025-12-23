@@ -68,26 +68,12 @@ class BrowseAsUserForm(form.Form):
 
 class DeleteCommitteeKeysForm(form.Form):
     committee_name: str = form.label("Committee", widget=form.Widget.SELECT)
-    confirm_delete: str = form.label("Confirmation", "Type DELETE KEYS to confirm")
-
-    @pydantic.field_validator("confirm_delete")
-    @classmethod
-    def validate_confirm_delete(cls, v: str) -> str:
-        if v != "DELETE KEYS":
-            raise ValueError("You must type DELETE KEYS exactly to confirm deletion")
-        return v
+    confirm_delete: Literal["DELETE KEYS"] = form.label("Confirmation", "Type DELETE KEYS to confirm.")
 
 
 class DeleteReleaseForm(form.Form):
     releases_to_delete: form.StrList = form.label("Select releases to delete", widget=form.Widget.CUSTOM)
-    confirm_delete: str = form.label("Confirmation", "Please type DELETE exactly to confirm deletion.")
-
-    @pydantic.field_validator("confirm_delete")
-    @classmethod
-    def validate_confirm_delete(cls, v: str) -> str:
-        if v != "DELETE":
-            raise ValueError("You must type DELETE exactly to confirm deletion")
-        return v
+    confirm_delete: Literal["DELETE"] = form.label("Confirmation", "Type DELETE to confirm.")
 
     @pydantic.field_validator("releases_to_delete")
     @classmethod

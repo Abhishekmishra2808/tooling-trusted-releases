@@ -103,3 +103,23 @@ def test_preview_updates_on_body_input(page_announce: Page) -> None:
 
     preview_tab.click()
     expect(preview_content).not_to_have_text(initial_preview or "")
+
+
+def test_submit_button_disabled_until_confirm_typed(page_announce: Page) -> None:
+    """The submit button should be disabled until CONFIRM is typed."""
+    submit_button = page_announce.get_by_role("button", name="Send announcement email")
+    confirm_input = page_announce.locator("#confirm_announce")
+
+    expect(submit_button).to_be_disabled()
+
+    confirm_input.fill("confirm")
+    expect(submit_button).to_be_disabled()
+
+    confirm_input.fill("CONFIRM")
+    expect(submit_button).to_be_enabled()
+
+    confirm_input.fill("CONFIRME")
+    expect(submit_button).to_be_disabled()
+
+    confirm_input.fill("CONFIRM")
+    expect(submit_button).to_be_enabled()

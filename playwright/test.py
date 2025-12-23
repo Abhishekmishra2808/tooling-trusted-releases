@@ -274,16 +274,21 @@ def lifecycle_06_announce_preview(page: Page, credentials: Credentials, version_
     form_locator = page.locator(f'form[action="/announce/{TEST_PROJECT}/{esc_id(version_name)}"]')
     expect(form_locator).to_be_visible()
 
-    logging.info("Locating the confirmation checkbox within the form")
-    checkbox_locator = form_locator.locator('input[name="confirm_announce"]')
-    expect(checkbox_locator).to_be_visible()
+    logging.info("Locating the confirmation input within the form")
+    confirm_input_locator = form_locator.locator('input[name="confirm_announce"]')
+    expect(confirm_input_locator).to_be_visible()
 
-    logging.info("Checking the confirmation checkbox")
-    checkbox_locator.check()
-
-    logging.info("Locating and activating the announce button within the form")
+    logging.info("Verifying submit button is initially disabled")
     submit_button_locator = form_locator.get_by_role("button", name="Send announcement email")
+    expect(submit_button_locator).to_be_disabled()
+
+    logging.info("Typing CONFIRM in the confirmation input")
+    confirm_input_locator.fill("CONFIRM")
+
+    logging.info("Verifying submit button is now enabled")
     expect(submit_button_locator).to_be_enabled()
+
+    logging.info("Clicking the announce button")
     submit_button_locator.click()
 
     logging.info("Waiting for navigation to /releases after submitting announcement")

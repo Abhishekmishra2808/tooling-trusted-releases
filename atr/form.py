@@ -681,6 +681,9 @@ def _get_widget_type(field_info: pydantic.fields.FieldInfo) -> Widget:  # noqa: 
         return Widget.NUMBER
 
     if origin is Literal:
+        args = get_args(annotation)
+        if len(args) == 1:
+            return Widget.TEXT
         return Widget.SELECT
 
     if origin is set:

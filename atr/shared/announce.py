@@ -15,6 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from typing import Literal
+
 import pydantic
 
 import atr.form as form
@@ -31,7 +33,10 @@ class AnnounceForm(form.Form):
     subject: str = form.label("Subject")
     body: str = form.label("Body", widget=form.Widget.CUSTOM)
     download_path_suffix: str = form.label("Download path suffix", widget=form.Widget.CUSTOM)
-    confirm_announce: form.Bool = form.label("Confirm")
+    confirm_announce: Literal["CONFIRM"] = form.label(
+        "Confirm",
+        "Type CONFIRM (in capitals) to enable the submit button.",
+    )
 
     @pydantic.field_validator("download_path_suffix")
     @classmethod
@@ -49,9 +54,3 @@ class AnnounceForm(form.Form):
         if "/." in suffix:
             raise ValueError("Download path suffix must not contain /.")
         return suffix
-
-    @pydantic.model_validator(mode="after")
-    def validate_confirm(self) -> "AnnounceForm":
-        if not self.confirm_announce:
-            raise ValueError("You must confirm the announcement by checking the box")
-        return self
