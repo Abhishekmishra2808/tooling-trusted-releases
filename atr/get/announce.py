@@ -29,7 +29,6 @@ import atr.models.sql as sql
 import atr.post as post
 import atr.render as render
 import atr.shared as shared
-import atr.shared.distribution as distribution
 import atr.template as template
 import atr.util as util
 import atr.web as web
@@ -167,7 +166,7 @@ async def _render_page(
     """
     page.style[markupsafe.Markup(page_styles)]
 
-    distribution.html_nav_phase(page, release.project.name, release.version, staging=False)
+    render.html_nav_phase(page, release.project.name, release.version, staging=False)
 
     page.h1[
         "Announce ",

@@ -120,7 +120,7 @@ async def _render_page(
         project_name=release.project.name,
         version_name=release.version,
     )
-    shared.distribution.html_nav(
+    render.html_nav(
         page,
         back_link_url,
         f"Compose {release.short_display_name}",

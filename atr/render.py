@@ -15,9 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from typing import Literal
+
 import htpy
 
+import atr.get as get
 import atr.htm as htm
+import atr.util as util
+
+type Phase = Literal["COMPOSE", "VOTE", "FINISH"]
 
 
 def body_tabs(
@@ -69,6 +75,53 @@ def body_tabs(
     tab_content = htm.div(f"#{tab_id_prefix}-tab-content.tab-content")[edit_pane, preview_pane, variables_pane]
 
     return htm.div[tabs.collect(), tab_content]
+
+
+def html_nav(container: htm.Block, back_url: str, back_anchor: str, phase: Phase) -> None:
+    classes = ".d-flex.justify-content-between.align-items-center"
+    block = htm.Block(htm.p, classes=classes)
+    block.a(".atr-back-link", href=back_url)[f"← Back to {back_anchor}"]
+    span = htm.Block(htm.span)
+
+    def _phase(actual: Phase, expected: Phase) -> None:
+        match expected:
+            case "COMPOSE":
+                symbol = "①"
+            case "VOTE":
+                symbol = "②"
+            case "FINISH":
+                symbol = "③"
+        if actual == expected:
+            span.strong(f".atr-phase-{actual}.atr-phase-symbol")[symbol]
+            span.span(f".atr-phase-{actual}.atr-phase-label")[actual]
+        else:
+            span.span(".atr-phase-symbol-other")[symbol]
+
+    _phase(phase, "COMPOSE")
+    span.span(".atr-phase-arrow")["→"]
+    _phase(phase, "VOTE")
+    span.span(".atr-phase-arrow")["→"]
+    _phase(phase, "FINISH")
+
+    block.append(span.collect(separator=" "))
+    container.append(block)
+
+
+def html_nav_phase(block: htm.Block, project: str, version: str, staging: bool) -> None:
+    label: Phase
+    route, label = (get.compose.selected, "COMPOSE")
+    if not staging:
+        route, label = (get.finish.selected, "FINISH")
+    html_nav(
+        block,
+        util.as_url(
+            route,
+            project_name=project,
+            version_name=version,
+        ),
+        back_anchor=f"{label.title()} {project} {version}",
+        phase=label,
+    )
 
 
 def _variables_tab(

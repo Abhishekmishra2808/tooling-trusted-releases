@@ -25,7 +25,7 @@ import atr.db as db
 import atr.db.interaction as interaction
 import atr.get.vote as vote
 import atr.htm as htm
-import atr.shared.distribution as distribution
+import atr.render as render
 import atr.template as template
 import atr.util as util
 import atr.web as web
@@ -67,7 +67,7 @@ async def selected(session: web.Committer | None, project_name: str, version_nam
     checklist_html = markupsafe.Markup(cmarkgfm.github_flavored_markdown_to_html(substituted_markdown))
 
     page = htm.Block()
-    distribution.html_nav(
+    render.html_nav(
         page,
         back_url=util.as_url(vote.selected, project_name=project_name, version_name=version_name),
         back_anchor=f"Vote on {project.short_display_name} {version_name}",

@@ -35,6 +35,7 @@ import atr.get.vote as vote
 import atr.htm as htm
 import atr.models.sql as sql
 import atr.post as post
+import atr.render as render
 import atr.shared as shared
 import atr.shared.draft as draft
 import atr.storage as storage
@@ -493,7 +494,7 @@ def _render_file_row(
 
 
 def _render_header(page: htm.Block, release: sql.Release) -> None:
-    shared.distribution.html_nav(
+    render.html_nav(
         page,
         back_url=util.as_url(vote.selected, project_name=release.project.name, version_name=release.version),
         back_anchor=f"Vote on {release.project.short_display_name} {release.version}",

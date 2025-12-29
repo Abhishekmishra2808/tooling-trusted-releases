@@ -40,6 +40,7 @@ import atr.get.root as root
 import atr.htm as htm
 import atr.mapping as mapping
 import atr.models.sql as sql
+import atr.render as render
 import atr.shared as shared
 import atr.template as template
 import atr.util as util
@@ -250,7 +251,7 @@ async def _render_page(
     """Render the finish page using htm.py."""
     page = htm.Block()
 
-    shared.distribution.html_nav(
+    render.html_nav(
         page,
         back_url=util.as_url(root.index),
         back_anchor="Select a release",

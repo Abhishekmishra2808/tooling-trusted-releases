@@ -32,6 +32,7 @@ import atr.get.vote as vote
 import atr.htm as htm
 import atr.models.results as results
 import atr.models.sql as sql
+import atr.render as render
 import atr.sbom as sbom
 import atr.sbom.models.osv as osv
 import atr.shared as shared
@@ -70,7 +71,7 @@ async def report(session: web.Committer, project: str, version: str, file_path: 
             back_anchor = f"Vote on {release.project.short_display_name} {release.version}"
             phase = "VOTE"
 
-    shared.distribution.html_nav(
+    render.html_nav(
         block,
         back_url=back_url,
         back_anchor=back_anchor,

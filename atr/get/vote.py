@@ -37,6 +37,7 @@ import atr.htm as htm
 import atr.mapping as mapping
 import atr.models.sql as sql
 import atr.post as post
+import atr.render as render
 import atr.shared as shared
 import atr.storage as storage
 import atr.template as template
@@ -303,7 +304,7 @@ def _render_checklist_card(page: htm.Block, release: sql.Release) -> None:
 
 
 def _render_header(page: htm.Block, release: sql.Release, show_resolve_section: bool) -> None:
-    shared.distribution.html_nav(
+    render.html_nav(
         page,
         back_url=util.as_url(root.index),
         back_anchor="Select a release",

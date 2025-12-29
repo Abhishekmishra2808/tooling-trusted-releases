@@ -24,7 +24,7 @@ import atr.get.finish as finish
 import atr.get.vote as vote
 import atr.htm as htm
 import atr.models.sql as sql
-import atr.shared.distribution as distribution
+import atr.render as render
 import atr.template as template
 import atr.util as util
 import atr.web as web
@@ -57,7 +57,7 @@ async def selected(session: web.Committer, project_name: str, version_name: str)
     nav_info = _get_navigation_info(release)
     if nav_info:
         back_url, back_label, phase_label = nav_info
-        distribution.html_nav(block, back_url, back_label, phase_label)
+        render.html_nav(block, back_url, back_label, phase_label)
 
     block.h1["Files in ", htm.strong[release.project.short_display_name], " ", htm.em[release.version]]
 

@@ -27,6 +27,7 @@ import atr.get.compose as compose
 import atr.get.keys as keys
 import atr.htm as htm
 import atr.models.sql as sql
+import atr.render as render
 import atr.shared as shared
 import atr.template as template
 import atr.util as util
@@ -43,7 +44,7 @@ async def selected(session: web.Committer, project_name: str, version_name: str)
 
     block = htm.Block()
 
-    shared.distribution.html_nav(
+    render.html_nav(
         block,
         util.as_url(compose.selected, project_name=release.project.name, version_name=release.version),
         f"Compose {release.short_display_name}",

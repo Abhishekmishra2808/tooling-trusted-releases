@@ -22,6 +22,7 @@ import atr.form as form
 import atr.htm as htm
 import atr.models.sql as sql
 import atr.post as post
+import atr.render as render
 import atr.shared as shared
 import atr.template as template
 import atr.util as util
@@ -39,7 +40,7 @@ async def list_get(session: web.Committer, project: str, version: str) -> str:
 
     release = await shared.distribution.release_validated(project, version, staging=None)
     staging = release.phase == sql.ReleasePhase.RELEASE_CANDIDATE_DRAFT
-    shared.distribution.html_nav_phase(block, project, version, staging)
+    render.html_nav_phase(block, project, version, staging)
 
     record_a_distribution = htm.a(
         ".btn.btn-primary",
@@ -123,7 +124,7 @@ async def _record_form_page(project: str, version: str, staging: bool) -> str:
     await shared.distribution.release_validated(project, version, staging=staging)
 
     block = htm.Block()
-    shared.distribution.html_nav_phase(block, project, version, staging=staging)
+    render.html_nav_phase(block, project, version, staging=staging)
 
     title = "Record a staging distribution" if staging else "Record a manual distribution"
     block.h1[title]

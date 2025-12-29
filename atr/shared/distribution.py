@@ -18,19 +18,14 @@
 from __future__ import annotations
 
 import enum
-from typing import Literal
 
 import pydantic
 
 import atr.db as db
 import atr.form as form
-import atr.get as get
 import atr.htm as htm
 import atr.models.distribution as distribution
 import atr.models.sql as sql
-import atr.util as util
-
-type Phase = Literal["COMPOSE", "VOTE", "FINISH"]
 
 
 class DistributionPlatform(enum.Enum):
@@ -116,56 +111,6 @@ class DistributeForm(form.Form):
             raise ValueError(f'Platform "{platform_name}" does not require an owner or namespace.')
 
         return self
-
-
-# TODO: Move this to an appropriate module
-def html_nav(container: htm.Block, back_url: str, back_anchor: str, phase: Phase) -> None:
-    classes = ".d-flex.justify-content-between.align-items-center"
-    block = htm.Block(htm.p, classes=classes)
-    block.a(".atr-back-link", href=back_url)[f"← Back to {back_anchor}"]
-    span = htm.Block(htm.span)
-
-    def _phase(actual: Phase, expected: Phase) -> None:
-        # nonlocal span
-        match expected:
-            case "COMPOSE":
-                symbol = "①"
-            case "VOTE":
-                symbol = "②"
-            case "FINISH":
-                symbol = "③"
-        if actual == expected:
-            span.strong(f".atr-phase-{actual}.atr-phase-symbol")[symbol]
-            span.span(f".atr-phase-{actual}.atr-phase-label")[actual]
-        else:
-            span.span(".atr-phase-symbol-other")[symbol]
-
-    _phase(phase, "COMPOSE")
-    span.span(".atr-phase-arrow")["→"]
-    _phase(phase, "VOTE")
-    span.span(".atr-phase-arrow")["→"]
-    _phase(phase, "FINISH")
-
-    block.append(span.collect(separator=" "))
-    container.append(block)
-
-
-# TODO: Move this to a more appropriate module
-def html_nav_phase(block: htm.Block, project: str, version: str, staging: bool) -> None:
-    label: Phase
-    route, label = (get.compose.selected, "COMPOSE")
-    if not staging:
-        route, label = (get.finish.selected, "FINISH")
-    html_nav(
-        block,
-        util.as_url(
-            route,
-            project_name=project,
-            version_name=version,
-        ),
-        back_anchor=f"{label.title()} {project} {version}",
-        phase=label,
-    )
 
 
 def html_submitted_values_table(block: htm.Block, dd: distribution.Data) -> None:
