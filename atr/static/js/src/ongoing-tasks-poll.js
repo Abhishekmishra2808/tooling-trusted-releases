@@ -18,11 +18,13 @@
  */
 
 (() => {
+	function handleCollapseToggle() {
+		this.textContent = this.textContent.trim() === "More" ? "Less" : "More";
+	}
+
 	// Handle More and Less toggle buttons for collapse sections
 	document.querySelectorAll(".page-collapse-toggle").forEach((button) => {
-		button.addEventListener("click", function () {
-			this.textContent = this.textContent.trim() === "More" ? "Less" : "More";
-		});
+		button.addEventListener("click", handleCollapseToggle);
 	});
 
 	const banner = document.getElementById("ongoing-tasks-banner");
@@ -35,6 +37,10 @@
 	const textSpan = document.getElementById("ongoing-tasks-text");
 	const voteButton = document.getElementById("start-vote-button");
 	const progress = document.getElementById("poll-progress");
+	const checksSummaryContainer = document.getElementById(
+		"checks-summary-container",
+	);
+	const filesTableContainer = document.getElementById("files-table-container");
 	const pollInterval = 3000;
 
 	let currentCount = parseInt(countSpan?.textContent || "0", 10);
@@ -110,6 +116,23 @@
 		voteButton.setAttribute("title", "Start a vote on this draft");
 	}
 
+	function updatePageContent(data) {
+		if (checksSummaryContainer && data.checks_summary_html !== undefined) {
+			checksSummaryContainer.innerHTML = data.checks_summary_html;
+		}
+		if (filesTableContainer && data.files_table_html !== undefined) {
+			filesTableContainer.innerHTML = data.files_table_html;
+			reattachCollapseToggleListeners();
+		}
+	}
+
+	function reattachCollapseToggleListeners() {
+		document.querySelectorAll(".page-collapse-toggle").forEach((button) => {
+			button.removeEventListener("click", handleCollapseToggle);
+			button.addEventListener("click", handleCollapseToggle);
+		});
+	}
+
 	function pollOngoingTasks() {
 		if (currentCount === 0) return;
 
@@ -125,6 +148,7 @@
 				if (newCount !== currentCount) {
 					updateBanner(newCount);
 				}
+				updatePageContent(data);
 				if (newCount > 0) {
 					restartProgress();
 					setTimeout(pollOngoingTasks, pollInterval);

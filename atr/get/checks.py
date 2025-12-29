@@ -21,9 +21,12 @@ from typing import NamedTuple
 
 import asfquart.base as base
 import htpy
+import quart
 
 import atr.blueprints.get as get
 import atr.db as db
+import atr.db.interaction as interaction
+import atr.form as form
 import atr.get.download as download
 import atr.get.ignores as ignores
 import atr.get.report as report
@@ -31,7 +34,9 @@ import atr.get.sbom as sbom
 import atr.get.vote as vote
 import atr.htm as htm
 import atr.models.sql as sql
+import atr.post as post
 import atr.shared as shared
+import atr.shared.draft as draft
 import atr.storage as storage
 import atr.template as template
 import atr.util as util
@@ -127,6 +132,76 @@ async def selected(session: web.Committer | None, project_name: str, version_nam
     return await template.blank(
         f"File checks for {release.project.short_display_name} {release.version}",
         content=page.collect(),
+    )
+
+
+@get.committer("/checks/<project_name>/<version_name>/<revision_number>")
+async def selected_revision(
+    session: web.Committer,
+    project_name: str,
+    version_name: str,
+    revision_number: str,
+) -> web.QuartResponse:
+    """Return JSON with ongoing count and HTML fragments for dynamic updates."""
+    async with db.session() as data:
+        release = await data.release(
+            project_name=project_name,
+            version=version_name,
+            _committee=True,
+            _project=True,
+        ).demand(base.ASFQuartException("Release does not exist", errorcode=404))
+
+    base_path = util.release_directory(release)
+    paths = [path async for path in util.paths_recursive(base_path)]
+    paths.sort()
+
+    async with storage.read(session) as read:
+        ragp = read.as_general_public()
+        info = await ragp.releases.path_info(release, paths)
+
+    ongoing_count = await interaction.tasks_ongoing(project_name, version_name, revision_number)
+
+    checks_summary_elem = shared._render_checks_summary(info, project_name, version_name)
+    checks_summary_html = str(checks_summary_elem) if checks_summary_elem else ""
+
+    delete_file_forms: dict[str, str] = {}
+    if release.phase == sql.ReleasePhase.RELEASE_CANDIDATE_DRAFT:
+        for path in paths:
+            delete_file_forms[str(path)] = str(
+                form.render(
+                    model_cls=draft.DeleteFileForm,
+                    action=util.as_url(post.draft.delete_file, project_name=project_name, version_name=version_name),
+                    form_classes=".d-inline-block.m-0",
+                    submit_classes="btn-sm btn-outline-danger",
+                    submit_label="Delete",
+                    empty=True,
+                    defaults={"file_path": str(path)},
+                    confirm=(
+                        "Are you sure you want to delete this file? "
+                        "This will also delete any associated metadata files. "
+                        "This cannot be undone."
+                    ),
+                )
+            )
+
+    files_table_html = await quart.render_template(
+        "check-selected-path-table.html",
+        paths=paths,
+        info=info,
+        project_name=project_name,
+        version_name=version_name,
+        release=release,
+        phase=release.phase.value,
+        delete_file_forms=delete_file_forms,
+        csrf_input=str(form.csrf_input()),
+    )
+
+    return quart.jsonify(
+        {
+            "ongoing": ongoing_count,
+            "checks_summary_html": checks_summary_html,
+            "files_table_html": files_table_html,
+        }
     )
 
 

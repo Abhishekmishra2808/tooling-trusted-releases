@@ -89,7 +89,7 @@
   <div id="ongoing-tasks-banner"
        class="alert alert-warning{% if ongoing_tasks_count == 0 %} d-none{% endif %}"
        role="alert"
-       {% if revision_number %}data-api-url="/api/checks/ongoing/{{ release.project.name }}/{{ release.version }}/{{ revision_number }}"{% endif %}>
+       {% if revision_number %}data-api-url="/checks/{{ release.project.name }}/{{ release.version }}/{{ revision_number }}"{% endif %}>
     <i class="bi bi-exclamation-triangle me-2"></i>
     <span id="ongoing-tasks-text">There {{ 'is' if ongoing_tasks_count == 1 else 'are' }} currently <strong id="ongoing-tasks-count">{{ ongoing_tasks_count }}</strong> background verification {{ 'task' if ongoing_tasks_count == 1 else 'tasks' }} running for the latest revision. Results shown below may be incomplete or outdated until the tasks finish.</span>
     <div id="poll-progress-container" class="progress mt-2">
@@ -97,9 +97,11 @@
     </div>
   </div>
 
-  {% if checks_summary_html %}
-    {{ checks_summary_html|safe }}
-  {% endif %}
+  <div id="checks-summary-container">
+    {% if checks_summary_html %}
+      {{ checks_summary_html|safe }}
+    {% endif %}
+  </div>
 
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -113,12 +115,13 @@
       </h5>
     </div>
     <div class="card-body">
-      {% if paths|length > 0 %}
-        {% include "check-selected-path-table.html" %}
-
-      {% else %}
-        <div class="alert alert-info">This draft does not have any files yet.</div>
-      {% endif %}
+      <div id="files-table-container">
+        {% if paths|length > 0 %}
+          {% include "check-selected-path-table.html" %}
+        {% else %}
+          <div class="alert alert-info">This draft does not have any files yet.</div>
+        {% endif %}
+      </div>
     </div>
   </div>
   {% if phase == "release_candidate_draft" %}
