@@ -721,6 +721,9 @@ def _get_widget_type(field_info: pydantic.fields.FieldInfo) -> Widget:  # noqa: 
         args = get_args(annotation)
         if len(args) == 1:
             return Widget.TEXT
+        # The other reasonable option as the default here is Widget.RADIO
+        # But currently in ATR we use RADIO 7 times and SELECT 6 times
+        # This is close enough to warrant keeping SELECT as the default
         return Widget.SELECT
 
     if origin is set:
