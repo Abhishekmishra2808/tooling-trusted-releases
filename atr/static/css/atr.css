@@ -459,6 +459,10 @@ span.warning {
     cursor: pointer;
 }
 
+.atr-phase-nav {
+    white-space: nowrap;
+}
+
 .atr-phase-arrow {
     margin-left: 0.3333rem;
     margin-right: 0.3333rem;

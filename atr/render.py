@@ -81,7 +81,7 @@ def html_nav(container: htm.Block, back_url: str, back_anchor: str, phase: Phase
     classes = ".d-flex.justify-content-between.align-items-center"
     block = htm.Block(htm.p, classes=classes)
     block.a(".atr-back-link", href=back_url)[f"← Back to {back_anchor}"]
-    span = htm.Block(htm.span)
+    span = htm.Block(htm.span, classes=".atr-phase-nav")
 
     def _phase(actual: Phase, expected: Phase) -> None:
         match expected:
