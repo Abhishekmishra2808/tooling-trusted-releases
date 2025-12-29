@@ -86,10 +86,6 @@ def log(level: int, msg: str) -> None:
     _event(level, msg)
 
 
-def python_repr(object_name: str) -> str:
-    return f"<{object_name}>"
-
-
 def performance(msg: str) -> None:
     if PERFORMANCE is not None:
         PERFORMANCE.info(msg)
@@ -98,6 +94,10 @@ def performance(msg: str) -> None:
 def performance_init() -> None:
     global PERFORMANCE
     PERFORMANCE = _performance_logger()
+
+
+def python_repr(object_name: str) -> str:
+    return f"<{object_name}>"
 
 
 def secret(msg: str, data: bytes) -> None:

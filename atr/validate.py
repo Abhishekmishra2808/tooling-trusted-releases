@@ -77,6 +77,15 @@ def committee_components(
     return wrap
 
 
+@committee_components("Committee.child_committees")
+def committee_child_committees(c: sql.Committee) -> Divergences:
+    """Check that a committee has no child_committees."""
+
+    expected: list[object] = []
+    actual = c.child_committees
+    yield from divergences(expected, actual)
+
+
 @committee_components("Committee.full_name")
 def committee_full_name(c: sql.Committee) -> Divergences:
     """Validate the Committee.full_name value."""
@@ -109,15 +118,6 @@ def committee_full_name(c: sql.Committee) -> Divergences:
         "value not to start with 'Apache '",
         full_name,
     )
-
-
-@committee_components("Committee.child_committees")
-def committee_child_committees(c: sql.Committee) -> Divergences:
-    """Check that a committee has no child_committees."""
-
-    expected: list[object] = []
-    actual = c.child_committees
-    yield from divergences(expected, actual)
 
 
 def committees(cs: Iterable[sql.Committee]) -> AnnotatedDivergences:

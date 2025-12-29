@@ -82,50 +82,6 @@ def total_size(tgz_path: str, chunk_size: int = 4096) -> int:
     return total_size
 
 
-def _archive_extract_safe_process_file(
-    tf: tarfile.TarFile,
-    member: tarfile.TarInfo,
-    extract_dir: str,
-    total_extracted: int,
-    max_size: int,
-    chunk_size: int,
-) -> int:
-    """Process a single file member during safe archive extraction."""
-    target_path = os.path.join(extract_dir, member.name)
-    if not os.path.abspath(target_path).startswith(os.path.abspath(extract_dir)):
-        log.warning(f"Skipping potentially unsafe path: {member.name}")
-        return 0
-
-    os.makedirs(os.path.dirname(target_path), exist_ok=True)
-
-    source = tf.extractfile(member)
-    if source is None:
-        # Should not happen if member.isreg() is true
-        log.warning(f"Could not extract file object for member: {member.name}")
-        return 0
-
-    extracted_file_size = 0
-    try:
-        with open(target_path, "wb") as target:
-            while chunk := source.read(chunk_size):
-                target.write(chunk)
-                extracted_file_size += len(chunk)
-
-                # Check size limits during extraction
-                if (total_extracted + extracted_file_size) > max_size:
-                    # Clean up the partial file before raising
-                    target.close()
-                    os.unlink(target_path)
-                    raise ExtractionError(
-                        f"Extraction exceeded maximum size limit of {max_size} bytes",
-                        {"max_size": max_size, "current_size": total_extracted},
-                    )
-    finally:
-        source.close()
-
-    return extracted_file_size
-
-
 def _archive_extract_member(
     tf: tarfile.TarFile,
     member: tarfile.TarInfo,
@@ -177,6 +133,50 @@ def _archive_extract_member(
         _archive_extract_safe_process_hardlink(member, extract_dir)
 
     return total_extracted, extracted_paths
+
+
+def _archive_extract_safe_process_file(
+    tf: tarfile.TarFile,
+    member: tarfile.TarInfo,
+    extract_dir: str,
+    total_extracted: int,
+    max_size: int,
+    chunk_size: int,
+) -> int:
+    """Process a single file member during safe archive extraction."""
+    target_path = os.path.join(extract_dir, member.name)
+    if not os.path.abspath(target_path).startswith(os.path.abspath(extract_dir)):
+        log.warning(f"Skipping potentially unsafe path: {member.name}")
+        return 0
+
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+    source = tf.extractfile(member)
+    if source is None:
+        # Should not happen if member.isreg() is true
+        log.warning(f"Could not extract file object for member: {member.name}")
+        return 0
+
+    extracted_file_size = 0
+    try:
+        with open(target_path, "wb") as target:
+            while chunk := source.read(chunk_size):
+                target.write(chunk)
+                extracted_file_size += len(chunk)
+
+                # Check size limits during extraction
+                if (total_extracted + extracted_file_size) > max_size:
+                    # Clean up the partial file before raising
+                    target.close()
+                    os.unlink(target_path)
+                    raise ExtractionError(
+                        f"Extraction exceeded maximum size limit of {max_size} bytes",
+                        {"max_size": max_size, "current_size": total_extracted},
+                    )
+    finally:
+        source.close()
+
+    return extracted_file_size
 
 
 def _archive_extract_safe_process_hardlink(member: tarfile.TarInfo, extract_dir: str) -> None:

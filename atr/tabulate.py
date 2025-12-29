@@ -25,74 +25,6 @@ import atr.models.sql as sql
 import atr.util as util
 
 
-async def votes(
-    committee: sql.Committee | None, thread_id: str
-) -> tuple[int | None, dict[str, models.tabulate.VoteEmail]]:
-    """Tabulate votes."""
-    start = time.perf_counter_ns()
-    email_to_uid = await util.email_to_uid_map()
-    end = time.perf_counter_ns()
-    log.info(f"LDAP search took {(end - start) / 1000000} ms")
-    log.info(f"Email addresses from LDAP: {len(email_to_uid)}")
-
-    start = time.perf_counter_ns()
-    tabulated_votes = {}
-    start_unixtime = None
-    async for _mid, msg in util.thread_messages(thread_id):
-        from_raw = msg.get("from_raw", "")
-        ok, from_email_lower, asf_uid = _vote_identity(from_raw, email_to_uid)
-        if not ok:
-            continue
-
-        if asf_uid is not None:
-            asf_uid_or_email = asf_uid
-            list_raw = msg.get("list_raw", "")
-            status = await _vote_status(asf_uid, list_raw, committee)
-        else:
-            asf_uid_or_email = from_email_lower
-            status = models.tabulate.VoteStatus.UNKNOWN
-
-        if start_unixtime is None:
-            epoch = msg.get("epoch", "")
-            if epoch:
-                start_unixtime = int(epoch)
-
-        subject = msg.get("subject", "")
-        if "[RESULT]" in subject:
-            break
-
-        body = msg.get("body", "")
-        if not body:
-            continue
-
-        castings = _vote_castings(body)
-        if not castings:
-            continue
-
-        if len(castings) == 1:
-            vote_cast = castings[0][0]
-        else:
-            vote_cast = models.tabulate.Vote.UNKNOWN
-        quotation = " // ".join([c[1] for c in castings])
-
-        vote_email = models.tabulate.VoteEmail(
-            asf_uid_or_email=asf_uid_or_email,
-            from_email=from_email_lower,
-            status=status,
-            asf_eid=msg.get("mid", ""),
-            iso_datetime=msg.get("date", ""),
-            vote=vote_cast,
-            quotation=quotation,
-            updated=asf_uid_or_email in tabulated_votes,
-        )
-        tabulated_votes[asf_uid_or_email] = vote_email
-    end = time.perf_counter_ns()
-    log.info(f"Tabulated votes: {len(tabulated_votes)}")
-    log.info(f"Tabulation took {(end - start) / 1000000} ms")
-
-    return start_unixtime, tabulated_votes
-
-
 async def vote_committee(thread_id: str, release: sql.Release) -> sql.Committee | None:
     committee = release.project.committee
     if util.is_dev_environment():
@@ -201,6 +133,74 @@ def vote_summary(tabulated_votes: dict[str, models.tabulate.VoteEmail]) -> dict[
             result["unknown_votes_abstain"] += 1 if (vote_email.vote.value == "-") else 0
 
     return result
+
+
+async def votes(
+    committee: sql.Committee | None, thread_id: str
+) -> tuple[int | None, dict[str, models.tabulate.VoteEmail]]:
+    """Tabulate votes."""
+    start = time.perf_counter_ns()
+    email_to_uid = await util.email_to_uid_map()
+    end = time.perf_counter_ns()
+    log.info(f"LDAP search took {(end - start) / 1000000} ms")
+    log.info(f"Email addresses from LDAP: {len(email_to_uid)}")
+
+    start = time.perf_counter_ns()
+    tabulated_votes = {}
+    start_unixtime = None
+    async for _mid, msg in util.thread_messages(thread_id):
+        from_raw = msg.get("from_raw", "")
+        ok, from_email_lower, asf_uid = _vote_identity(from_raw, email_to_uid)
+        if not ok:
+            continue
+
+        if asf_uid is not None:
+            asf_uid_or_email = asf_uid
+            list_raw = msg.get("list_raw", "")
+            status = await _vote_status(asf_uid, list_raw, committee)
+        else:
+            asf_uid_or_email = from_email_lower
+            status = models.tabulate.VoteStatus.UNKNOWN
+
+        if start_unixtime is None:
+            epoch = msg.get("epoch", "")
+            if epoch:
+                start_unixtime = int(epoch)
+
+        subject = msg.get("subject", "")
+        if "[RESULT]" in subject:
+            break
+
+        body = msg.get("body", "")
+        if not body:
+            continue
+
+        castings = _vote_castings(body)
+        if not castings:
+            continue
+
+        if len(castings) == 1:
+            vote_cast = castings[0][0]
+        else:
+            vote_cast = models.tabulate.Vote.UNKNOWN
+        quotation = " // ".join([c[1] for c in castings])
+
+        vote_email = models.tabulate.VoteEmail(
+            asf_uid_or_email=asf_uid_or_email,
+            from_email=from_email_lower,
+            status=status,
+            asf_eid=msg.get("mid", ""),
+            iso_datetime=msg.get("date", ""),
+            vote=vote_cast,
+            quotation=quotation,
+            updated=asf_uid_or_email in tabulated_votes,
+        )
+        tabulated_votes[asf_uid_or_email] = vote_email
+    end = time.perf_counter_ns()
+    log.info(f"Tabulated votes: {len(tabulated_votes)}")
+    log.info(f"Tabulation took {(end - start) / 1000000} ms")
+
+    return start_unixtime, tabulated_votes
 
 
 def _format_duration(duration_hours: float | int) -> str:
