@@ -538,7 +538,7 @@ async def has_files(release: sql.Release) -> bool:
 
 def is_dev_environment() -> bool:
     conf = config.get()
-    for development_host in ("127.0.0.1", "localhost.apache.org"):
+    for development_host in ("127.0.0.1", "atr", "atr-dev", "localhost.apache.org"):
         if (conf.APP_HOST == development_host) or conf.APP_HOST.startswith(f"{development_host}:"):
             return True
     return False
