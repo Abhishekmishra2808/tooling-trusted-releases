@@ -207,6 +207,15 @@ async def start_vote_body(body: str, options: StartVoteOptions) -> str:
         if release_policy:
             checklist_content = release_policy.release_checklist or ""
 
+    if checklist_content and release.project:
+        checklist_content = checklist_body(
+            checklist_content,
+            project=release.project,
+            version_name=options.version_name,
+            committee=committee,
+            revision=latest_rev,
+        )
+
     # Perform substitutions in the body
     # TODO: Handle the DURATION == 0 case
     body = body.replace("[CHECKLIST_URL]", checklist_url)
