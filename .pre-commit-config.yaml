@@ -89,9 +89,8 @@ repos:
     - id: stylelint
       additional_dependencies: ['stylelint@16.14.1', 'stylelint-config-standard@37.0.0']
       files: "atr/static/css/.*\\.css$"
-      exclude: "atr/static/css/bootstrap\\..*\\.css$|atr/static/css/bootstrap\\-.*\\.css$|atr/static/css/normalize\\.css$|atr/static/css/mermaid\\.min\\.css$"
       types_or: ['css']
-      args: ['--fix']
+      args: ['--fix', '--allow-empty-input']
 - repo: https://github.com/woodruffw/zizmor-pre-commit
   rev: v1.19.0
   hooks:

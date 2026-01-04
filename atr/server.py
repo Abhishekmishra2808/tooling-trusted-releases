@@ -24,7 +24,7 @@ import os
 import queue
 import urllib.parse
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, Final
 
 import asfquart
 import asfquart.base as base
@@ -57,6 +57,21 @@ import atr.util as util
 # TODO: Technically this is a global variable
 # We should probably find a cleaner way to do this
 app: base.QuartApp | None = None
+
+_SWAGGER_UI_TEMPLATE: Final[str] = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link type="text/css" rel="stylesheet" href="{{ swagger_css_url }}">
+  <title>{{ title }}</title>
+</head>
+<body>
+  <div id="swagger-ui" data-openapi-url="{{ openapi_url }}"></div>
+  <script src="{{ swagger_js_url }}"></script>
+  <script src="{{ swagger_init_url }}"></script>
+</body>
+</html>
+"""
 
 # Avoid OIDC
 asfquart.generics.OAUTH_URL_INIT = "https://oauth.apache.org/auth?state=%s&redirect_uri=%s"
@@ -111,6 +126,9 @@ def _app_setup_api_docs(app: base.QuartApp) -> None:
 
     import atr.metadata as metadata
 
+    app.config["QUART_SCHEMA_SWAGGER_JS_URL"] = "/static/js/min/swagger-ui-bundle.min.js"
+    app.config["QUART_SCHEMA_SWAGGER_CSS_URL"] = "/static/css/swagger-ui.min.css"
+
     quart_schema.QuartSchema(
         app,
         info=quart_schema.Info(
@@ -119,7 +137,7 @@ def _app_setup_api_docs(app: base.QuartApp) -> None:
             version=metadata.version,
         ),
         openapi_provider_class=ApiOnlyOpenAPIProvider,
-        swagger_ui_path="/api/docs",
+        swagger_ui_path=None,
         openapi_path="/api/openapi.json",
         security_schemes={
             "BearerAuth": quart_schema.HttpSecurityScheme(
@@ -128,6 +146,18 @@ def _app_setup_api_docs(app: base.QuartApp) -> None:
             )
         },
     )
+
+    @app.route("/api/docs")
+    @quart_schema.hide
+    async def swagger_ui() -> str:
+        return await quart.render_template_string(
+            _SWAGGER_UI_TEMPLATE,
+            title="ATR API",
+            swagger_js_url=app.config["QUART_SCHEMA_SWAGGER_JS_URL"],
+            swagger_css_url=app.config["QUART_SCHEMA_SWAGGER_CSS_URL"],
+            swagger_init_url="/static/js/src/swagger-init.js",
+            openapi_url=quart.url_for("openapi"),
+        )
 
 
 def _app_setup_context(app: base.QuartApp) -> None:
