@@ -17,7 +17,9 @@
 .venv
 __pycache__
 cert.pem
+dev/
 dmypy.json
 htmlcov/
 key.pem
+node_modules/
 state/
