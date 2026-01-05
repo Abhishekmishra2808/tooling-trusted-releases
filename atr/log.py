@@ -29,7 +29,7 @@ _global_recent_logs: collections.deque[str] | None = None
 _global_recent_logs_lock = threading.Lock()
 
 
-class _BufferingHandler(logging.Handler):
+class BufferingHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         if _global_recent_logs is None:
             return
@@ -104,7 +104,7 @@ def info(msg: str) -> None:
 def create_debug_handler() -> logging.Handler:
     global _global_recent_logs
     _global_recent_logs = collections.deque(maxlen=100)
-    handler = _BufferingHandler()
+    handler = BufferingHandler()
     handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(levelname)s: %(message)s"))
     handler.setLevel(logging.DEBUG)
     return handler

@@ -204,6 +204,10 @@ class Recorder:
         if not await aiofiles.os.path.isfile(path):
             return False
 
+        no_cache_file = self.abs_path_base() / ".atr-no-cache"
+        if await aiofiles.os.path.exists(no_cache_file):
+            return False
+
         self.__input_hash = await _compute_file_hash(path)
 
         async with db.session() as data:

@@ -82,7 +82,7 @@ def total_size(tgz_path: str, chunk_size: int = 4096) -> int:
     return total_size
 
 
-def _archive_extract_member(
+def _archive_extract_member(  # noqa: C901
     tf: tarfile.TarFile,
     member: tarfile.TarInfo,
     extract_dir: str,
@@ -101,8 +101,10 @@ def _archive_extract_member(
     if member.isdev():
         return 0, extracted_paths
 
+    # Only track files that pass the path safety check
     if track_files and isinstance(track_files, set) and (member_basename in track_files):
-        extracted_paths.append(member.name)
+        if _safe_path(extract_dir, member.name) is not None:
+            extracted_paths.append(member.name)
 
     # Check whether extraction would exceed the size limit
     if member.isreg() and ((total_extracted + member.size) > max_size):
@@ -114,8 +116,7 @@ def _archive_extract_member(
     # Extract directories directly
     if member.isdir():
         # Ensure the path is safe before extracting
-        target_path = os.path.join(extract_dir, member.name)
-        if not os.path.abspath(target_path).startswith(os.path.abspath(extract_dir)):
+        if _safe_path(extract_dir, member.name) is None:
             log.warning(f"Skipping potentially unsafe path: {member.name}")
             return 0, extracted_paths
         tf.extract(member, extract_dir, numeric_owner=True)
@@ -144,8 +145,8 @@ def _archive_extract_safe_process_file(
     chunk_size: int,
 ) -> int:
     """Process a single file member during safe archive extraction."""
-    target_path = os.path.join(extract_dir, member.name)
-    if not os.path.abspath(target_path).startswith(os.path.abspath(extract_dir)):
+    target_path = _safe_path(extract_dir, member.name)
+    if target_path is None:
         log.warning(f"Skipping potentially unsafe path: {member.name}")
         return 0
 
@@ -235,7 +236,8 @@ def _archive_extract_safe_process_symlink(member: tarfile.TarInfo, extract_dir: 
 def _safe_path(base_dir: str, *paths: str) -> str | None:
     """Return an absolute path within the base_dir built from the given paths, or None if it escapes."""
     target = os.path.abspath(os.path.join(base_dir, *paths))
-    if target.startswith(os.path.abspath(base_dir)):
+    abs_base = os.path.abspath(base_dir)
+    if (target == abs_base) or target.startswith(abs_base + os.sep):
         return target
     return None
 
@@ -277,8 +279,11 @@ def _zip_archive_extract_member(
     extracted_paths: list[str] = [],
 ) -> tuple[int, list[str]]:
     member_basename = os.path.basename(member.name)
-    if track_files and (isinstance(track_files, set) and (member_basename in track_files)):
-        extracted_paths.append(member.name)
+
+    # Only track files that pass the path safety check
+    if track_files and isinstance(track_files, set) and (member_basename in track_files):
+        if _safe_path(extract_dir, member.name) is not None:
+            extracted_paths.append(member.name)
 
     if member_basename.startswith("._"):
         return 0, extracted_paths
@@ -290,8 +295,8 @@ def _zip_archive_extract_member(
         )
 
     if member.isdir():
-        target_path = os.path.join(extract_dir, member.name)
-        if not os.path.abspath(target_path).startswith(os.path.abspath(extract_dir)):
+        target_path = _safe_path(extract_dir, member.name)
+        if target_path is None:
             log.warning(f"Skipping potentially unsafe path: {member.name}")
             return 0, extracted_paths
         os.makedirs(target_path, exist_ok=True)
@@ -314,8 +319,8 @@ def _zip_extract_safe_process_file(
     max_size: int,
     chunk_size: int,
 ) -> int:
-    target_path = os.path.join(extract_dir, member.name)
-    if not os.path.abspath(target_path).startswith(os.path.abspath(extract_dir)):
+    target_path = _safe_path(extract_dir, member.name)
+    if target_path is None:
         log.warning(f"Skipping potentially unsafe path: {member.name}")
         return 0
 

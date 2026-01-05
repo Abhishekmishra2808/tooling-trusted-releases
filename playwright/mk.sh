@@ -29,7 +29,7 @@ sq key delete --cert-file "${_fp}.secret.asc" --output "${_fp}.asc"
 
 # Enter the directory containing the artifact
 cd apache-test-0.2/
-rm ./*.asc ./*.sha512
+rm -f ./*.asc ./*.sha512
 
 # Generate the SHA-2-512 hash
 sha512sum apache-test-0.2.tar.gz > \
