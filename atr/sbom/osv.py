@@ -212,7 +212,8 @@ async def _fetch_vulnerability_details(
         print(f"[DEBUG] Fetching details for {vuln_id}")
     async with session.get(f"{_OSV_API_BASE}/vulns/{vuln_id}") as response:
         response.raise_for_status()
-        return await response.json()
+        data = await response.json()
+        return models.osv.VulnerabilityDetails.model_validate(data)
 
 
 def _get_source(vuln: models.osv.VulnerabilityDetails) -> dict[str, str]:
@@ -309,7 +310,7 @@ async def _scan_bundle_populate_vulnerabilities(
 ) -> None:
     details_cache: dict[str, models.osv.VulnerabilityDetails] = {}
     for vulns in component_vulns_map.values():
-        for vuln in vulns:
+        for i, vuln in enumerate(vulns):
             vuln_id = vuln.id
             if not vuln_id:
                 continue
@@ -317,7 +318,6 @@ async def _scan_bundle_populate_vulnerabilities(
             if details is None:
                 details = await _fetch_vulnerability_details(session, vuln_id)
                 details_cache[vuln_id] = details
-            vuln.__dict__.clear()
-            vuln.__dict__.update(details)
+            vulns[i] = details
     if _DEBUG:
         print(f"[DEBUG] Fetched details for {len(details_cache)} unique vulnerabilities")
