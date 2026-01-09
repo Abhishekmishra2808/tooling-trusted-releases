@@ -41,7 +41,7 @@ certs:
 	fi
 
 certs-local:
-	cd state && mkcert localhost.apache.org localhost 127.0.0.1 ::1
+	cd state && mkcert localhost.apache.org 127.0.0.1 ::1
 
 check:
 	git add -A
@@ -88,8 +88,8 @@ run-alpine:
 	docker run --rm --init --user "$$(id -u):$$(id -g)" \
 	  -p 8080:8080 -p 2222:2222 \
 	  -v "$$PWD/state:/opt/atr/state" \
-	  -v "$$PWD/state/localhost.apache.org+3-key.pem:/opt/atr/state/key.pem" \
-	  -v "$$PWD/state/localhost.apache.org+3.pem:/opt/atr/state/cert.pem" \
+	  -v "$$PWD/state/localhost.apache.org+2-key.pem:/opt/atr/state/key.pem" \
+	  -v "$$PWD/state/localhost.apache.org+2.pem:/opt/atr/state/cert.pem" \
 	  -e APP_HOST=localhost.apache.org:8080 -e SECRET_KEY=insecure-local-key \
 	  -e ALLOW_TESTS=1 -e SSH_HOST=0.0.0.0 -e BIND=0.0.0.0:8080 \
 	  tooling-trusted-release
@@ -102,13 +102,13 @@ run-playwright-slow:
 
 serve:
 	SSH_HOST=127.0.0.1 uv run --frozen hypercorn --bind $(BIND) \
-	  --keyfile localhost.apache.org+3-key.pem --certfile localhost.apache.org+3.pem \
+	  --keyfile localhost.apache.org+2-key.pem --certfile localhost.apache.org+2.pem \
 	  atr.server:app --debug --reload --worker-class uvloop
 
 serve-local:
 	APP_HOST=localhost.apache.org:8080 SECRET_KEY=insecure-local-key \
 	  ALLOW_TESTS=1 SSH_HOST=127.0.0.1 uv run --frozen hypercorn --bind $(BIND) \
-	  --keyfile localhost.apache.org+3-key.pem --certfile localhost.apache.org+3.pem \
+	  --keyfile localhost.apache.org+2-key.pem --certfile localhost.apache.org+2.pem \
 	  atr.server:app --debug --reload --worker-class uvloop
 
 sync:
