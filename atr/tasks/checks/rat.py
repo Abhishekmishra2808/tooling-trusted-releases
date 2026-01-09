@@ -47,6 +47,9 @@ _JAVA_MEMORY_ARGS: Final[list[str]] = []
 # Generated file patterns, always excluded
 _GENERATED_FILE_PATTERNS: Final[list[str]] = [f"**/*{s}" for s in constants.GENERATED_FILE_SUFFIXES]
 
+# The name of the temp file for excludes defined in release policies
+_POLICY_EXCLUDES_FILENAME: Final[str] = ".atr-rat-excludes"
+
 # The name of the file that contains the exclusions for the specified archive
 _RAT_EXCLUDES_FILENAME: Final[str] = ".rat-excludes"
 
@@ -86,8 +89,11 @@ async def check(args: checks.FunctionArguments) -> results.Results | None:
 
     log.info(f"Checking RAT licenses for {artifact_abs_path} (rel: {args.primary_rel_path})")
 
+    is_source = await recorder.primary_path_is_source()
+    policy_excludes = project.policy_source_excludes_rat if is_source else []
+
     try:
-        await _check_core(args, recorder, artifact_abs_path)
+        await _check_core(args, recorder, artifact_abs_path, policy_excludes)
     except Exception as e:
         # TODO: Or bubble for task failure?
         await recorder.failure("Error running Apache RAT check", {"error": str(e)})
@@ -98,7 +104,8 @@ async def check(args: checks.FunctionArguments) -> results.Results | None:
 def _build_rat_command(
     rat_jar_path: str,
     xml_output_path: str,
-    exclude_file: str | None,
+    excludes_file: str | None,
+    apply_extended_std: bool,
 ) -> list[str]:
     """Build the RAT command with appropriate exclusions."""
     command = [
@@ -121,7 +128,7 @@ def _build_rat_command(
     for std in _STD_EXCLUSIONS_ALWAYS:
         command.extend(["--input-exclude-std", std])
 
-    if exclude_file is None:
+    if apply_extended_std:
         for std in _STD_EXCLUSIONS_EXTENDED:
             command.extend(["--input-exclude-std", std])
 
@@ -129,10 +136,11 @@ def _build_rat_command(
         command.extend(["--input-exclude", pattern])
 
     command.extend(["--input-exclude", _RAT_REPORT_FILENAME])
+    command.extend(["--input-exclude", _POLICY_EXCLUDES_FILENAME])
 
-    if exclude_file is not None:
+    if excludes_file is not None:
         command.extend(["--input-exclude", _RAT_EXCLUDES_FILENAME])
-        command.extend(["--input-exclude-file", exclude_file])
+        command.extend(["--input-exclude-file", excludes_file])
 
     command.extend(["--", "."])
 
@@ -140,11 +148,15 @@ def _build_rat_command(
 
 
 async def _check_core(
-    args: checks.FunctionArguments, recorder: checks.Recorder, artifact_abs_path: pathlib.Path
+    args: checks.FunctionArguments,
+    recorder: checks.Recorder,
+    artifact_abs_path: pathlib.Path,
+    policy_excludes: list[str],
 ) -> None:
     result_data = await asyncio.to_thread(
         _check_core_logic,
         artifact_path=str(artifact_abs_path),
+        policy_excludes=policy_excludes,
         rat_jar_path=args.extra_args.get("rat_jar_path", _CONFIG.APACHE_RAT_JAR_PATH),
         max_extract_size=args.extra_args.get("max_extract_size", _CONFIG.MAX_EXTRACT_SIZE),
         chunk_size=args.extra_args.get("chunk_size", _CONFIG.EXTRACT_CHUNK_SIZE),
@@ -187,6 +199,7 @@ async def _check_core(
 
 def _check_core_logic(  # noqa: C901
     artifact_path: str,
+    policy_excludes: list[str],
     rat_jar_path: str = _CONFIG.APACHE_RAT_JAR_PATH,
     max_extract_size: int = _CONFIG.MAX_EXTRACT_SIZE,
     chunk_size: int = _CONFIG.EXTRACT_CHUNK_SIZE,
@@ -256,14 +269,35 @@ def _check_core_logic(  # noqa: C901
                     "unapproved_files": [],
                     "unknown_license_files": [],
                     "errors": [f"Found {len(exclude_file_paths)} {_RAT_EXCLUDES_FILENAME} files"],
+                    "excludes_source": "unknown",
                 }
 
             # Narrow to single path after validation
-            exclude_file_path: str | None = exclude_file_paths[0] if exclude_file_paths else None
+            archive_excludes_path: str | None = exclude_file_paths[0] if exclude_file_paths else None
 
-            # Determine scan root
-            if exclude_file_path is not None:
-                scan_root = os.path.dirname(os.path.join(temp_dir, exclude_file_path))
+            # Determine excludes_source and effective excludes file
+            excludes_source: str
+            effective_excludes_path: str | None
+
+            if archive_excludes_path is not None:
+                excludes_source = "archive"
+                effective_excludes_path = archive_excludes_path
+                log.info(f"Using archive {_RAT_EXCLUDES_FILENAME}: {archive_excludes_path}")
+            elif policy_excludes:
+                excludes_source = "policy"
+                policy_excludes_file = os.path.join(temp_dir, _POLICY_EXCLUDES_FILENAME)
+                with open(policy_excludes_file, "w") as f:
+                    f.write("\n".join(policy_excludes))
+                effective_excludes_path = os.path.relpath(policy_excludes_file, temp_dir)
+                log.info(f"Using policy excludes written to: {policy_excludes_file}")
+            else:
+                excludes_source = "none"
+                effective_excludes_path = None
+                log.info("No excludes: using defaults only")
+
+            # Determine scan root based on archive .rat-excludes location
+            if archive_excludes_path is not None:
+                scan_root = os.path.dirname(os.path.join(temp_dir, archive_excludes_path))
 
                 # Verify that scan_root is inside temp_dir
                 abs_scan_root = os.path.abspath(scan_root)
@@ -281,6 +315,7 @@ def _check_core_logic(  # noqa: C901
                         "unapproved_files": [],
                         "unknown_license_files": [],
                         "errors": ["Exclusion file path escapes extraction directory"],
+                        "excludes_source": excludes_source,
                     }
 
                 log.info(f"Using {_RAT_EXCLUDES_FILENAME} directory as scan root: {scan_root}")
@@ -298,16 +333,21 @@ def _check_core_logic(  # noqa: C901
                         "unapproved_files": [],
                         "unknown_license_files": [],
                         "errors": [f"{untracked_count} file(s) outside {_RAT_EXCLUDES_FILENAME} directory"],
+                        "excludes_source": excludes_source,
                     }
             else:
                 scan_root = temp_dir
-                log.info(f"No {_RAT_EXCLUDES_FILENAME} found, using temp_dir as scan root: {scan_root}")
+                log.info(f"No archive {_RAT_EXCLUDES_FILENAME} found, using temp_dir as scan root: {scan_root}")
 
             # Execute RAT and get results or error
+            # Extended std exclusions apply when there's no archive .rat-excludes
+            apply_extended_std = excludes_source != "archive"
             error_result, xml_output_path = _check_core_logic_execute_rat(
-                rat_jar_path, scan_root, temp_dir, exclude_file_path
+                rat_jar_path, scan_root, temp_dir, effective_excludes_path, apply_extended_std, excludes_source
             )
             if error_result:
+                error_result["excludes_source"] = excludes_source
+                error_result["extended_std_applied"] = apply_extended_std
                 return error_result
 
             # Parse the XML output
@@ -335,6 +375,8 @@ def _check_core_logic(  # noqa: C901
                         os.path.normpath(file["name"]),
                     )
 
+            results["excludes_source"] = excludes_source
+            results["extended_std_applied"] = apply_extended_std
             return results
 
     except Exception as e:
@@ -351,25 +393,31 @@ def _check_core_logic(  # noqa: C901
             "unapproved_files": [],
             "unknown_license_files": [],
             "errors": [str(e), traceback.format_exc()],
+            "excludes_source": "unknown",
         }
 
 
 def _check_core_logic_execute_rat(
-    rat_jar_path: str, scan_root: str, temp_dir: str, exclude_file_path: str | None
+    rat_jar_path: str,
+    scan_root: str,
+    temp_dir: str,
+    excludes_file_path: str | None,
+    apply_extended_std: bool,
+    excludes_source: str,
 ) -> tuple[dict[str, Any] | None, str | None]:
     """Execute Apache RAT and process its output."""
     xml_output_path = os.path.join(temp_dir, _RAT_REPORT_FILENAME)
     log.info(f"XML output will be written to: {xml_output_path}")
 
     # Convert exclusion file path from temp_dir relative to scan_root relative
-    exclude_file: str | None = None
-    if exclude_file_path is not None:
-        abs_path = os.path.join(temp_dir, exclude_file_path)
+    excludes_file: str | None = None
+    if excludes_file_path is not None:
+        abs_path = os.path.join(temp_dir, excludes_file_path)
         if not (os.path.exists(abs_path) and os.path.isfile(abs_path)):
             log.error(f"Exclusion file not found or not a regular file: {abs_path}")
             return {
                 "valid": False,
-                "message": f"Exclusion file is not a regular file: {exclude_file_path}",
+                "message": f"Exclusion file is not a regular file: {excludes_file_path}",
                 "total_files": 0,
                 "approved_licenses": 0,
                 "unapproved_licenses": 0,
@@ -377,10 +425,11 @@ def _check_core_logic_execute_rat(
                 "unapproved_files": [],
                 "unknown_license_files": [],
                 "errors": [f"Expected exclusion file but found: {abs_path}"],
+                "excludes_source": excludes_source,
             }, None
-        exclude_file = os.path.relpath(abs_path, scan_root)
-        log.info(f"Using exclusion file: {exclude_file}")
-    command = _build_rat_command(rat_jar_path, xml_output_path, exclude_file)
+        excludes_file = os.path.relpath(abs_path, scan_root)
+        log.info(f"Using exclusion file: {excludes_file} (source: {excludes_source})")
+    command = _build_rat_command(rat_jar_path, xml_output_path, excludes_file, apply_extended_std)
     log.info(f"Running Apache RAT: {' '.join(command)}")
 
     # Change working directory to scan_root when running the process
@@ -424,6 +473,7 @@ def _check_core_logic_execute_rat(
                     f"STDOUT: {process.stdout}",
                     f"STDERR: {process.stderr}",
                 ],
+                "excludes_source": excludes_source,
             }
             return error_dict, None
 
@@ -442,6 +492,7 @@ def _check_core_logic_execute_rat(
             "unapproved_files": [],
             "unknown_license_files": [],
             "errors": [f"Timeout: {e}"],
+            "excludes_source": excludes_source,
         }, None
     except Exception as e:
         # Change back to the original directory before raising
@@ -457,6 +508,7 @@ def _check_core_logic_execute_rat(
             "unapproved_files": [],
             "unknown_license_files": [],
             "errors": [f"Process error: {e}"],
+            "excludes_source": excludes_source,
         }, None
 
     # Change back to the original directory
@@ -479,6 +531,7 @@ def _check_core_logic_execute_rat(
             "unapproved_files": [],
             "unknown_license_files": [],
             "errors": [f"Missing output file: {xml_output_path}"],
+            "excludes_source": excludes_source,
         }, None
 
     # The XML was found correctly
@@ -529,6 +582,7 @@ def _check_core_logic_jar_exists(rat_jar_path: str) -> tuple[str, dict[str, Any]
                 "unapproved_files": [],
                 "unknown_license_files": [],
                 "errors": [f"Missing JAR: {rat_jar_path}"],
+                "excludes_source": "unknown",
             }
     else:
         log.info(f"Found Apache RAT JAR at: {rat_jar_path}")
@@ -662,6 +716,7 @@ def _check_java_installed() -> dict[str, Any] | None:
             "unapproved_files": [],
             "unknown_license_files": [],
             "errors": [f"Java error: {e}"],
+            "excludes_source": "unknown",
         }
 
 
