@@ -27,10 +27,22 @@ TEST_ARCHIVE = pathlib.Path(__file__).parent.parent / "e2e" / "test_files" / "ap
 @pytest.fixture
 def rat_available() -> tuple[bool, bool]:
     # TODO: Make this work properly in CI
-    java_ok = rat._check_java_installed() is None
-    _, jar_error = rat._check_core_logic_jar_exists(rat._CONFIG.APACHE_RAT_JAR_PATH)
+    java_ok = rat._synchronous_check_java_installed() is None
+    _, jar_error = rat._synchronous_check_jar_exists(rat._CONFIG.APACHE_RAT_JAR_PATH)
     jar_ok = jar_error is None
     return (java_ok, jar_ok)
+
+
+def test_check_includes_excludes_source_none(rat_available: tuple[bool, bool]):
+    _skip_if_unavailable(rat_available)
+    result = rat._synchronous(str(TEST_ARCHIVE), [])
+    assert result.excludes_source == "none"
+
+
+def test_check_includes_excludes_source_policy(rat_available: tuple[bool, bool]):
+    _skip_if_unavailable(rat_available)
+    result = rat._synchronous(str(TEST_ARCHIVE), ["*.py"])
+    assert result.excludes_source == "policy"
 
 
 def _skip_if_unavailable(rat_available: tuple[bool, bool]) -> None:
@@ -39,15 +51,3 @@ def _skip_if_unavailable(rat_available: tuple[bool, bool]) -> None:
         pytest.skip("Java not available")
     if not jar_ok:
         pytest.skip("RAT JAR not available")
-
-
-def test_check_includes_excludes_source_none(rat_available: tuple[bool, bool]):
-    _skip_if_unavailable(rat_available)
-    result = rat._check_core_logic(str(TEST_ARCHIVE), [])
-    assert result.excludes_source == "none"
-
-
-def test_check_includes_excludes_source_policy(rat_available: tuple[bool, bool]):
-    _skip_if_unavailable(rat_available)
-    result = rat._check_core_logic(str(TEST_ARCHIVE), ["*.py"])
-    assert result.excludes_source == "policy"
