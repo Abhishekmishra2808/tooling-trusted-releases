@@ -116,18 +116,28 @@ class CommitteeParticipant(FoundationCommitter):
         ).demand(storage.AccessError(f"Release '{project_name} {version}' not found."))
         release_dir = util.release_directory_base(release)
 
-        # Delete from the database
+        # Delete from the database using bulk SQL DELETE for efficiency
         log.info(f"Deleting database records for release: {project_name} {version}")
-        # Cascade should handle this, but we delete manually anyway
-        tasks_to_delete = await self.__data.task(project_name=release.project.name, version_name=release.version).all()
-        for task in tasks_to_delete:
-            await self.__data.delete(task)
-        log.debug(f"Deleted {util.plural(len(tasks_to_delete), 'task')} for {project_name} {version}")
 
-        checks_to_delete = await self.__data.check_result(release_name=release.name).all()
-        for check in checks_to_delete:
-            await self.__data.delete(check)
-        log.debug(f"Deleted {util.plural(len(checks_to_delete), 'check result')} for {project_name} {version}")
+        # Bulk delete tasks
+        # These is no cascade, so we must delete explicitly
+        via = sql.validate_instrumented_attribute
+        task_delete_stmt = sqlmodel.delete(sql.Task).where(
+            via(sql.Task.project_name) == release.project.name,
+            via(sql.Task.version_name) == release.version,
+        )
+        task_result = await self.__data.execute(task_delete_stmt)
+        task_count = task_result.rowcount if isinstance(task_result, engine.CursorResult) else 0
+        log.debug(f"Deleted {util.plural(task_count, 'task')} for {project_name} {version}")
+
+        # Bulk delete check results
+        # Handled by cascade, but we do this explicitly anyway
+        check_delete_stmt = sqlmodel.delete(sql.CheckResult).where(
+            via(sql.CheckResult.release_name) == release.name,
+        )
+        check_result = await self.__data.execute(check_delete_stmt)
+        check_count = check_result.rowcount if isinstance(check_result, engine.CursorResult) else 0
+        log.debug(f"Deleted {util.plural(check_count, 'check result')} for {project_name} {version}")
 
         # TODO: Ensure that revisions are not deleted
         # But this makes testing difficult
