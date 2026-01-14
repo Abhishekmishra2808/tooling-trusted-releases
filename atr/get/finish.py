@@ -247,9 +247,13 @@ def _render_distribution_tasks(release: sql.Release, tasks: Sequence[sql.Task]) 
                 htm.h3["In-progress distributions"],
                 htm.p["One or more automatic distributions are still in-progress:"],
                 *[_render_task(f) for f in in_progress_tasks],
-                htm.button(
+                htm.a(
                     ".btn.btn-success.me-2",
-                    {"onclick": "window.location.reload()"},
+                    href=util.as_url(
+                        selected,
+                        project_name=release.project.name,
+                        version_name=release.version,
+                    ),
                 )["Refresh"],
             ]
         )

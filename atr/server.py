@@ -338,7 +338,7 @@ def _app_setup_security_headers(app: base.QuartApp) -> None:
     # The script hash allows window.location.reload() and nothing else
     csp_directives = [
         "default-src 'self'",
-        "script-src 'self' 'sha256-4TpZ3Tx5SLybDXPQaSHGuP1RU4D+pzck+02JLVY61BY=' 'unsafe-hashes'",
+        "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' https://apache.org https://incubator.apache.org https://www.apache.org data:",
         "font-src 'self'",

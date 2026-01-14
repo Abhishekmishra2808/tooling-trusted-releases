@@ -483,7 +483,7 @@ async def validate_trusted_jwt(publisher: str, jwt: str) -> tuple[dict[str, Any]
     if publisher != "github":
         raise InteractionError(f"Publisher {publisher} not supported")
     payload = await jwtoken.verify_github_oidc(jwt)
-    if payload["actor_id"] != _GITHUB_TRUSTED_ROLE_NID:
+    if int(payload["actor_id"]) != _GITHUB_TRUSTED_ROLE_NID:
         asf_uid = await ldap.github_to_apache(payload["actor_id"])
     else:
         asf_uid = None
