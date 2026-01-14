@@ -152,6 +152,7 @@ async def _get_page_data(
                     version_name=version_name,
                     revision_number=release.latest_revision_number,
                     task_type=sql.TaskType.DISTRIBUTION_WORKFLOW,
+                    _workflow=True,
                 )
                 .order_by(sql.sqlmodel.desc(via(sql.Task.started)))
                 .all()
@@ -225,8 +226,12 @@ def _render_distribution_buttons(release: sql.Release) -> htm.Element:
 
 def _render_distribution_tasks(release: sql.Release, tasks: Sequence[sql.Task]) -> htm.Element:
     """Render current and failed distribution tasks."""
-    failed_tasks = [t for t in tasks if t.status == sql.TaskStatus.FAILED]
-    in_progress_tasks = [t for t in tasks if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE]]
+    failed_tasks = [t for t in tasks if t.status == sql.TaskStatus.FAILED or t.workflow.status == "failed"]
+    in_progress_tasks = [
+        t
+        for t in tasks
+        if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE] or t.workflow.status not in ["success", "failed"]
+    ]
 
     block = htm.Block()
 
@@ -541,10 +546,19 @@ def _render_release_card(release: sql.Release) -> htm.Element:
 def _render_task(task: sql.Task) -> htm.Element:
     """Render a distribution task's details."""
     args: gha.DistributionWorkflow = gha.DistributionWorkflow.model_validate(task.task_args)
-    status = task.status.value
-    return htm.p[
-        f"{args.platform} ({args.package} {args.version}): {task.error if task.error else status.capitalize()}"
-    ]
+    task_status = task.status.value
+    workflow_message = task.workflow.message if task.workflow else None
+    workflow_status = task.workflow.status if task.workflow else ""
+    if task_status != sql.TaskStatus.COMPLETED:
+        return htm.p[
+            f"{args.platform} ({args.package} {args.version}): {task.error if task.error else task_status.capitalize()}"
+        ]
+    else:
+        return htm.p[
+            f"{args.platform} ({args.package} {args.version}): {
+                workflow_message if workflow_message else workflow_status.capitalize()
+            }"
+        ]
 
 
 async def _sources_and_targets(latest_revision_dir: pathlib.Path) -> tuple[list[pathlib.Path], set[pathlib.Path]]:

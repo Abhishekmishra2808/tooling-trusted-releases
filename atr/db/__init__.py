@@ -649,6 +649,7 @@ class Session(sqlalchemy.ext.asyncio.AsyncSession):
         version_name: Opt[str | None] = NOT_SET,
         revision_number: Opt[str | None] = NOT_SET,
         primary_rel_path: Opt[str | None] = NOT_SET,
+        _workflow: bool = False,
     ) -> Query[sql.Task]:
         query = sqlmodel.select(sql.Task)
 
@@ -682,6 +683,9 @@ class Session(sqlalchemy.ext.asyncio.AsyncSession):
             query = query.where(sql.Task.revision_number == revision_number)
         if is_defined(primary_rel_path):
             query = query.where(sql.Task.primary_rel_path == primary_rel_path)
+
+        if _workflow:
+            query = query.options(joined_load(sql.Task.workflow))
 
         return Query(self, query)
 
