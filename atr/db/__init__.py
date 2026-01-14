@@ -615,6 +615,20 @@ class Session(sqlalchemy.ext.asyncio.AsyncSession):
 
         return Query(self, query)
 
+    def revision_counter(
+        self,
+        release_name: Opt[str] = NOT_SET,
+        last_allocated_number: Opt[int] = NOT_SET,
+    ) -> Query[sql.RevisionCounter]:
+        query = sqlmodel.select(sql.RevisionCounter)
+
+        if is_defined(release_name):
+            query = query.where(sql.RevisionCounter.release_name == release_name)
+        if is_defined(last_allocated_number):
+            query = query.where(sql.RevisionCounter.last_allocated_number == last_allocated_number)
+
+        return Query(self, query)
+
     def ssh_key(
         self,
         fingerprint: Opt[str] = NOT_SET,

@@ -329,6 +329,12 @@ class PersonalAccessToken(sqlmodel.SQLModel, table=True):
     label: str | None = None
 
 
+# RevisionCounter:
+class RevisionCounter(sqlmodel.SQLModel, table=True):
+    release_name: str = sqlmodel.Field(primary_key=True)
+    last_allocated_number: int = sqlmodel.Field(default=0)
+
+
 # SSHKey:
 class SSHKey(sqlmodel.SQLModel, table=True):
     fingerprint: str = sqlmodel.Field(primary_key=True)
