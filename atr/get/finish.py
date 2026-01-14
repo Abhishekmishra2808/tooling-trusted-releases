@@ -551,7 +551,9 @@ def _render_task(task: sql.Task) -> htm.Element:
     task_date = task.added.strftime("%Y-%m-%d %H:%M:%S")
     task_status = task.status.value
     workflow_status = task.workflow.status if task.workflow else ""
-    workflow_message = task.workflow.message if task.workflow else workflow_status.capitalize()
+    workflow_message = (
+        task.workflow.message if task.workflow and task.workflow.message else workflow_status.capitalize()
+    )
     if task_status != sql.TaskStatus.COMPLETED:
         return htm.p[
             f"{task_date} {args.platform} ({args.package} {args.version}): {
