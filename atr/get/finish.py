@@ -157,7 +157,6 @@ async def _get_page_data(
                 .order_by(sql.sqlmodel.desc(via(sql.Task.started)))
                 .all()
             )
-            if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE, sql.TaskStatus.FAILED]
         ]
 
     if release.phase != sql.ReleasePhase.RELEASE_PREVIEW:
@@ -226,11 +225,14 @@ def _render_distribution_buttons(release: sql.Release) -> htm.Element:
 
 def _render_distribution_tasks(release: sql.Release, tasks: Sequence[sql.Task]) -> htm.Element:
     """Render current and failed distribution tasks."""
-    failed_tasks = [t for t in tasks if t.status == sql.TaskStatus.FAILED or t.workflow.status == "failed"]
+    failed_tasks = [
+        t for t in tasks if t.status == sql.TaskStatus.FAILED or (t.workflow and t.workflow.status == "failed")
+    ]
     in_progress_tasks = [
         t
         for t in tasks
-        if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE] or t.workflow.status not in ["success", "failed"]
+        if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE]
+        or (t.workflow and t.workflow.status not in ["success", "failed"])
     ]
 
     block = htm.Block()
