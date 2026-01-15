@@ -5,6 +5,7 @@
 
 BIND ?= 127.0.0.1:8080
 IMAGE ?= tooling-trusted-release
+STATE_DIR ?= state
 
 build: build-alpine
 
@@ -40,12 +41,13 @@ bump-bootstrap:
 	  atr-bootstrap /opt/bootstrap/bump.sh $(BOOTSTRAP_VERSION)
 
 certs:
-	if test ! -f state/cert.pem || test ! -f state/key.pem; \
-	then uv run --frozen scripts/generate-certificates; \
+	if test ! -f $(STATE_DIR)/cert.pem || test ! -f $(STATE_DIR)/key.pem; \
+	then STATE_DIR=$(STATE_DIR) uv run --frozen scripts/generate-certificates; \
 	fi
 
 certs-local:
-	cd state && mkcert localhost.apache.org 127.0.0.1 ::1
+	mkdir -p $(STATE_DIR)
+	cd $(STATE_DIR) && mkcert localhost.apache.org 127.0.0.1 ::1
 
 check:
 	git add -A
@@ -91,9 +93,9 @@ ipython:
 run-alpine:
 	docker run --rm --init --user "$$(id -u):$$(id -g)" \
 	  -p 8080:8080 -p 2222:2222 \
-	  -v "$$PWD/state:/opt/atr/state" \
-	  -v "$$PWD/state/localhost.apache.org+2-key.pem:/opt/atr/state/key.pem" \
-	  -v "$$PWD/state/localhost.apache.org+2.pem:/opt/atr/state/cert.pem" \
+	  -v "$$PWD/$(STATE_DIR):/opt/atr/state" \
+	  -v "$$PWD/$(STATE_DIR)/localhost.apache.org+2-key.pem:/opt/atr/state/key.pem" \
+	  -v "$$PWD/$(STATE_DIR)/localhost.apache.org+2.pem:/opt/atr/state/cert.pem" \
 	  -e APP_HOST=localhost.apache.org:8080 -e SECRET_KEY=insecure-local-key \
 	  -e ALLOW_TESTS=1 -e SSH_HOST=0.0.0.0 -e BIND=0.0.0.0:8080 \
 	  tooling-trusted-release
