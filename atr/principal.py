@@ -396,10 +396,6 @@ class Authorisation(AsyncObject):
         return self.__asf_uid is not None
 
     def is_member_of(self, committee_name: str) -> bool:
-        # TODO: This is a workaround for a bug
-        if self.__asf_uid in {"sbp", "tn", "wave"}:
-            if committee_name == "tooling":
-                return True
         if self.__asf_uid is None:
             return False
         return self.__authoriser.is_member_of(self.__asf_uid, committee_name)
