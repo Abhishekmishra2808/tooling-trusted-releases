@@ -119,17 +119,18 @@ def _app_create_base(app_config: type[config.AppConfig]) -> base.QuartApp:
     return app
 
 
-def _app_dirs_setup(app_config: type[config.AppConfig]) -> None:
+def _app_dirs_setup(state_dir_str: str, hot_reload: bool) -> None:
     """Setup application directories."""
-    if not os.path.isdir(app_config.STATE_DIR):
-        raise RuntimeError(f"State directory not found: {app_config.STATE_DIR}")
-    os.chdir(app_config.STATE_DIR)
-    print(f"Working directory changed to: {os.getcwd()}")
+    if not os.path.isdir(state_dir_str):
+        raise RuntimeError(f"State directory not found: {state_dir_str}")
+    os.chdir(state_dir_str)
+    if hot_reload is False:
+        print(f"Working directory changed to: {os.getcwd()}")
 
     directories_to_ensure = [
-        pathlib.Path(app_config.STATE_DIR) / "audit",
-        pathlib.Path(app_config.STATE_DIR) / "cache",
-        pathlib.Path(app_config.STATE_DIR) / "database",
+        pathlib.Path(state_dir_str) / "audit",
+        pathlib.Path(state_dir_str) / "cache",
+        pathlib.Path(state_dir_str) / "database",
         util.get_downloads_dir(),
         util.get_finished_dir(),
         util.get_tmp_dir(),
@@ -411,18 +412,10 @@ def _create_app(app_config: type[config.AppConfig]) -> base.QuartApp:
     if os.sep != "/":
         raise RuntimeError('ATR requires a POSIX compatible filesystem where os.sep is "/"')
     config_mode = config.get_mode()
-
-    # Custom configuration for the database path is no longer supported
-    configured_path = app_config.SQLITE_DB_PATH
-    if configured_path != "database/atr.db":
-        print("!!!", file=sys.stderr)
-        print("ERROR: Custom values of SQLITE_DB_PATH are no longer supported!", file=sys.stderr)
-        print("Please unset SQLITE_DB_PATH to allow the server to start", file=sys.stderr)
-        print("!!!", file=sys.stderr)
-        sys.exit(1)
-
-    _migrate_state(app_config)
-    _app_dirs_setup(app_config)
+    hot_reload = _is_hot_reload()
+    _validate_config(app_config, hot_reload)
+    _migrate_state(app_config.STATE_DIR, hot_reload)
+    _app_dirs_setup(app_config.STATE_DIR, hot_reload)
     log.performance_init()
     app = _app_create_base(app_config)
 
@@ -592,9 +585,9 @@ def _migrate_path_by_type(old_path: pathlib.Path, new_path: pathlib.Path) -> Non
         raise RuntimeError(f"Migration path is neither a file nor a directory: {old_path}")
 
 
-def _migrate_state(app_config: type[config.AppConfig]) -> None:
+def _migrate_state(state_dir_str: str, hot_reload: bool) -> None:
     # It's okay to use synchronous code in this function and in any functions that it calls
-    state_dir = pathlib.Path(app_config.STATE_DIR)
+    state_dir = pathlib.Path(state_dir_str)
 
     # Are there migrations to apply?
     pending_migrations = _pending_migrations(state_dir)
@@ -602,7 +595,7 @@ def _migrate_state(app_config: type[config.AppConfig]) -> None:
         return
 
     # Are we hot reloading?
-    if _is_hot_reload():
+    if hot_reload is True:
         print("!!!", file=sys.stderr)
         print("ERROR: Cannot migrate files during hot reload!", file=sys.stderr)
         print("The following files need to be migrated:", file=sys.stderr)
@@ -692,6 +685,26 @@ def _register_routes(app: base.QuartApp) -> None:
         if quart.request.path.startswith("/api"):
             return quart.jsonify({"error": "404 Not Found"}), 404
         return await template.render("notfound.html", error="404 Not Found", traceback="", status_code=404), 404
+
+
+def _validate_config(app_config: type[config.AppConfig], hot_reload: bool) -> None:
+    # Custom configuration for the database path is no longer supported
+    configured_path = app_config.SQLITE_DB_PATH
+    if configured_path != "database/atr.db":
+        print("!!!", file=sys.stderr)
+        print("ERROR: Custom values of SQLITE_DB_PATH are no longer supported!", file=sys.stderr)
+        print("Please unset SQLITE_DB_PATH to allow the server to start", file=sys.stderr)
+        print("!!!", file=sys.stderr)
+        sys.exit(1)
+
+    # Configuring the SECRET_KEY outside of ASFQuart is no longer supported
+    if (app_config.SECRET_KEY is not None) and (hot_reload is False):
+        print("!!!", file=sys.stderr)
+        print("WARNING: SECRET_KEY is no longer supported", file=sys.stderr)
+        print("Please unset SECRET_KEY", file=sys.stderr)
+        print("We are considering making this mandatory", file=sys.stderr)
+        print("!!!", file=sys.stderr)
+        # sys.exit(1)
 
 
 if __name__ == "__main__":

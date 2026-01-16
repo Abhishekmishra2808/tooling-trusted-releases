@@ -96,8 +96,8 @@ run-alpine:
 	  -v "$$PWD/$(STATE_DIR):/opt/atr/state" \
 	  -v "$$PWD/$(STATE_DIR)/localhost.apache.org+2-key.pem:/opt/atr/state/key.pem" \
 	  -v "$$PWD/$(STATE_DIR)/localhost.apache.org+2.pem:/opt/atr/state/cert.pem" \
-	  -e APP_HOST=localhost.apache.org:8080 -e SECRET_KEY=insecure-local-key \
-	  -e ALLOW_TESTS=1 -e SSH_HOST=0.0.0.0 -e BIND=0.0.0.0:8080 \
+	  -e APP_HOST=localhost.apache.org:8080 -e ALLOW_TESTS=1 \
+    -e SSH_HOST=0.0.0.0 -e BIND=0.0.0.0:8080 \
 	  tooling-trusted-release
 
 run-playwright:
@@ -112,8 +112,8 @@ serve:
 	  atr.server:app --debug --reload --worker-class uvloop
 
 serve-local:
-	APP_HOST=localhost.apache.org:8080 SECRET_KEY=insecure-local-key DISABLE_CHECK_CACHE=1 \
-	  ALLOW_TESTS=1 SSH_HOST=127.0.0.1 uv run --frozen hypercorn --bind $(BIND) \
+	APP_HOST=localhost.apache.org:8080 DISABLE_CHECK_CACHE=1 ALLOW_TESTS=1 \
+	  SSH_HOST=127.0.0.1 uv run --frozen hypercorn --bind $(BIND) \
 	  --keyfile localhost.apache.org+2-key.pem --certfile localhost.apache.org+2.pem \
 	  atr.server:app --debug --reload --worker-class uvloop
 
