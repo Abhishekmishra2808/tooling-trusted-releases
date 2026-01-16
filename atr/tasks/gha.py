@@ -74,7 +74,7 @@ async def trigger_workflow(args: DistributionWorkflow, *, task_id: int | None = 
         sql_platform = sql.DistributionPlatform[args.platform]
     except KeyError:
         _fail(f"Invalid platform: {args.platform}")
-    workflow = f"distribute-{sql_platform.value.gh_slug}.yml"
+    workflow = f"distribute-{sql_platform.value.gh_slug}{'-stg' if args.staging else ''}.yml"
     payload = {
         "ref": "main",
         "inputs": {
@@ -86,7 +86,6 @@ async def trigger_workflow(args: DistributionWorkflow, *, task_id: int | None = 
             "distribution-owner-namespace": args.namespace,
             "distribution-package": args.package,
             "distribution-version": args.version,
-            "staging": "true" if args.staging else "false",
             **args.arguments,
         },
     }
