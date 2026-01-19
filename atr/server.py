@@ -109,18 +109,6 @@ class ApiOnlyOpenAPIProvider(quart_schema.OpenAPIProvider):
                 yield rule
 
 
-def main() -> None:
-    """Quart debug server"""
-    global app
-    if app is None:
-        app = _create_app(config.get())
-    app.run(
-        port=8080,
-        ssl_keyfile="hypercorn/secrets/key.pem",
-        ssl_certfile="hypercorn/secrets/cert.pem",
-    )
-
-
 def _app_create_base(app_config: type[config.AppConfig]) -> base.QuartApp:
     """Create the base Quart application."""
     if asfquart.construct is ...:
@@ -730,6 +718,6 @@ def _validate_config(app_config: type[config.AppConfig], hot_reload: bool) -> No
 
 
 if __name__ == "__main__":
-    main()
+    raise RuntimeError("Call hypercorn directly with atr.server:app instead")
 else:
     app = _create_app(config.get())
