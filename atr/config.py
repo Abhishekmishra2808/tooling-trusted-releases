@@ -33,13 +33,20 @@ def _config_secrets(key: str, state_dir: str, default: str | None = None, cast: 
         repo_ini = decouple.RepositoryIni(secrets_path)
         config_obj = decouple.Config(repo_ini)
         sentinel = object()
-        value = config_obj.get(key, default=sentinel, cast=cast)
+        # Using a cast here would also cast the default sentinel value
+        value = config_obj.get(key, default=sentinel)
         if value is sentinel:
+            if default is None:
+                # We must return None separately because otherwise it may be cast
+                return decouple.config(key, default=None)
             return decouple.config(key, default=default, cast=cast)
         if isinstance(value, str) or (value is None):
             return value
         return None
     except FileNotFoundError:
+        if default is None:
+            # We must return None separately because otherwise it may be cast
+            return decouple.config(key, default=None)
         return decouple.config(key, default=default, cast=cast)
 
 

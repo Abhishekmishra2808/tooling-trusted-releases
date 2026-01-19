@@ -121,7 +121,12 @@ def _app_create_base(app_config: type[config.AppConfig]) -> base.QuartApp:
     if asfquart.construct is ...:
         raise ValueError("asfquart.construct is not set")
     app = asfquart.construct(__name__)
+    # ASFQuart sets secret_key from apptoken.txt, or generates a new one
+    # We must preserve this because from_object will overwrite it
+    # Our AppConfig.SECRET_KEY is None since we no longer support that setting
+    asfquart_secret_key = app.secret_key
     app.config.from_object(app_config)
+    app.secret_key = asfquart_secret_key
     return app
 
 
