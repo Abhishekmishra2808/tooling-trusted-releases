@@ -185,3 +185,11 @@ repos:
       language: system
       pass_filenames: false
       always_run: true
+
+    - id: check-models-imports
+      name: check models imports
+      description: Ensure that the models only import from approved packages
+      entry: uv run --frozen python scripts/check_models_imports.py
+      language: system
+      pass_filenames: false
+      files: ^atr/models/.*\.py$
