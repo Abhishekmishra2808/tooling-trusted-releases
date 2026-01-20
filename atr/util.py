@@ -208,6 +208,13 @@ def chmod_directories(path: pathlib.Path, permissions: int = 0o755) -> None:
             os.chmod(dir_path, permissions)
 
 
+def chmod_files(path: pathlib.Path, permissions: int) -> None:
+    """Set permissions on all files in a directory tree."""
+    for file_path in path.rglob("*"):
+        if file_path.is_file():
+            os.chmod(file_path, permissions)
+
+
 def committee_is_standing(committee_name: str) -> bool:
     return committee_name in registry.STANDING_COMMITTEES
 
