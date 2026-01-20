@@ -344,7 +344,6 @@ class PublisherReleaseAnnounceArgs(schema.Strict):
     version: str = schema.example("0.0.1")
     revision: str = schema.example("00005")
     email_to: str = schema.example("dev@example.apache.org")
-    subject: str = schema.example("[ANNOUNCE] Apache Example 1.0.0 release")
     body: str = schema.example("The Apache Example team is pleased to announce the release of Example 1.0.0...")
     path_suffix: str = schema.example("example/1.0.0")
 
@@ -384,7 +383,6 @@ class ReleaseAnnounceArgs(schema.Strict):
     version: str = schema.example("1.0.0")
     revision: str = schema.example("00005")
     email_to: str = schema.example("dev@example.apache.org")
-    subject: str = schema.example("[ANNOUNCE] Apache Example 1.0.0 release")
     body: str = schema.example("The Apache Example team is pleased to announce the release of Example 1.0.0...")
     path_suffix: str = schema.example("example/1.0.0")
 

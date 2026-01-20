@@ -774,15 +774,14 @@ async def publisher_release_announce(data: models.api.PublisherReleaseAnnounceAr
         committee = util.unwrap(project.committee)
         async with storage.write_as_committee_member(committee.name, asf_uid) as wacm:
             await wacm.announce.release(
-                project.name,
-                data.version,
-                data.revision,
-                data.email_to,
-                data.subject,
-                data.body,
-                data.path_suffix,
-                asf_uid,
-                asf_uid,
+                project_name=project.name,
+                version_name=data.version,
+                preview_revision_number=data.revision,
+                recipient=data.email_to,
+                body=data.body,
+                download_path_suffix=data.path_suffix,
+                asf_uid=asf_uid,
+                fullname=asf_uid,
             )
     except storage.AccessError as e:
         raise exceptions.BadRequest(str(e))
@@ -867,15 +866,14 @@ async def release_announce(data: models.api.ReleaseAnnounceArgs) -> DictResponse
         async with storage.write_as_project_committee_member(data.project, asf_uid) as wacm:
             # TODO: Get fullname and use it instead of asf_uid
             await wacm.announce.release(
-                data.project,
-                data.version,
-                data.revision,
-                data.email_to,
-                data.subject,
-                data.body,
-                data.path_suffix,
-                asf_uid,
-                asf_uid,
+                project_name=data.project,
+                version_name=data.version,
+                preview_revision_number=data.revision,
+                recipient=data.email_to,
+                body=data.body,
+                download_path_suffix=data.path_suffix,
+                asf_uid=asf_uid,
+                fullname=asf_uid,
             )
     except storage.AccessError as e:
         raise exceptions.BadRequest(str(e))
