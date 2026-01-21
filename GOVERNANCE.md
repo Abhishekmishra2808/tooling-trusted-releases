@@ -19,11 +19,11 @@ ASF Tooling is an ASF initiative launched in 2025, responsible for:
 
 ## Decision Making
 
-*TODO: Document the decision-making process for ATR.*
+TODO: Document the decision-making process for ATR.
 
 ## Roles and Responsibilities
 
-*TODO: Document roles (committers, PMC members, contributors, etc.)*
+TODO: Document roles (committers, PMC members, contributors, etc.)
 
 ## Communication
 
@@ -43,4 +43,4 @@ All participants in the ATR community are expected to follow the [ASF Code of Co
 
 ---
 
-*TODO: This document is a placeholder. Full governance details will be added as the project structure is formalized.*
+TODO: This document is a placeholder. Full governance details will be added as the project structure is formalized.

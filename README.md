@@ -45,7 +45,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for more options including running without 
 ## Documentation
 
 | Document | Description |
-|----------|-------------|
+| -------- | ----------- |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Quick start guide for developers |
 | [BUILD.md](BUILD.md) | Build instructions and Make targets |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute code |
@@ -62,7 +62,7 @@ Community feedback is encouraged! If you are an ASF committer or contributor int
 
 2. **Introduce yourself** on the development mailing list:
    📧 [dev@tooling.apache.org](mailto:dev@tooling.apache.org)
-   
+
    Subscribe by sending email with empty subject and body to [dev-subscribe@tooling.apache.org](mailto:dev-subscribe@tooling.apache.org) and replying to the automated response (per the [ASF mailing list how-to](https://www.apache.org/foundation/mailinglists)).
 
 3. **Share ideas or file issues:**

@@ -11,6 +11,7 @@ This guide covers building ATR and its components. For development setup, see [D
 - **Python 3.13** - Required runtime
 
 Install on Alpine Linux:
+
 ```shell
 apk add cmark curl git make mkcert@testing
 curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
@@ -18,6 +19,7 @@ uv python install 3.13
 ```
 
 Install on macOS (Homebrew):
+
 ```shell
 brew install cmark mkcert
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -54,6 +56,7 @@ docker compose up --build
 ```
 
 The compose configuration:
+
 - Mounts `atr/` for live code changes
 - Enables test mode (`ALLOW_TESTS=1`)
 - Exposes port 8080
@@ -67,6 +70,7 @@ make docs
 ```
 
 This command:
+
 1. Validates the table of contents structure
 2. Generates navigation links between pages
 3. Converts Markdown to HTML using cmark
@@ -175,64 +179,65 @@ sh tests/run-e2e.sh
 
 ### Build Targets
 
-| Target | Description |
-|--------|-------------|
-| `build` | Alias for `build-alpine` |
-| `build-alpine` | Build the Alpine-based container |
-| `build-bootstrap` | Build Bootstrap assets |
-| `build-docs` | Build documentation without validation |
-| `build-playwright` | Build Playwright test container |
-| `build-ts` | Compile TypeScript |
+| Target             | Description                            |
+| ------------------ | -------------------------------------- |
+| `build`            | Alias for `build-alpine`               |
+| `build-alpine`     | Build the Alpine-based container       |
+| `build-bootstrap`  | Build Bootstrap assets                 |
+| `build-docs`       | Build documentation without validation |
+| `build-playwright` | Build Playwright test container        |
+| `build-ts`         | Compile TypeScript                     |
 
 ### Run Targets
 
-| Target | Description |
-|--------|-------------|
-| `serve` | Run server with standard config |
-| `serve-local` | Run server with debug and test mode |
-| `run-alpine` | Run the Alpine container |
-| `run-playwright` | Run Playwright tests (fast) |
-| `run-playwright-slow` | Run Playwright tests (full) |
+| Target                  | Description                         |
+| ----------------------- | ----------------------------------- |
+| `serve`                 | Run server with standard config     |
+| `serve-local`           | Run server with debug and test mode |
+| `run-alpine`            | Run the Alpine container            |
+| `run-playwright`        | Run Playwright tests (fast)         |
+| `run-playwright-slow`   | Run Playwright tests (full)         |
 
 ### Dependency Targets
 
-| Target | Description |
-|--------|-------------|
-| `sync` | Install production dependencies |
-| `sync-all` | Install all dependencies including dev |
-| `update-deps` | Update and lock dependencies |
+| Target        | Description                            |
+| ------------- | -------------------------------------- |
+| `sync`        | Install production dependencies        |
+| `sync-all`    | Install all dependencies including dev |
+| `update-deps` | Update and lock dependencies           |
 
 ### Code Quality Targets
 
-| Target | Description |
-|--------|-------------|
-| `check` | Run all pre-commit checks |
-| `check-light` | Run lightweight checks |
-| `check-heavy` | Run comprehensive checks |
-| `check-extra` | Run interface ordering checks |
+| Target         | Description                    |
+| -------------- | ------------------------------ |
+| `check`        | Run all pre-commit checks      |
+| `check-light`  | Run lightweight checks         |
+| `check-heavy`  | Run comprehensive checks       |
+| `check-extra`  | Run interface ordering checks  |
 
 ### Utility Targets
 
-| Target | Description |
-|--------|-------------|
-| `certs` | Generate self-signed certificates |
-| `certs-local` | Generate mkcert certificates |
-| `docs` | Build and validate documentation |
-| `generate-version` | Generate version.py |
-| `commit` | Add, commit, pull, push workflow |
-| `ipython` | Start IPython shell with project |
+| Target             | Description                        |
+| ------------------ | ---------------------------------- |
+| `certs`            | Generate self-signed certificates  |
+| `certs-local`      | Generate mkcert certificates       |
+| `docs`             | Build and validate documentation   |
+| `generate-version` | Generate version.py                |
+| `commit`           | Add, commit, pull, push workflow   |
+| `ipython`          | Start IPython shell with project   |
 
 ## Configuration Variables
 
 The Makefile supports these variables:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `BIND` | `127.0.0.1:8080` | Server bind address |
-| `IMAGE` | `tooling-trusted-release` | Container image name |
-| `STATE_DIR` | `state` | State directory path |
+| Variable    | Default                   | Description           |
+| ----------- | ------------------------- | --------------------- |
+| `BIND`      | `127.0.0.1:8080`          | Server bind address   |
+| `IMAGE`     | `tooling-trusted-release` | Container image name  |
+| `STATE_DIR` | `state`                   | State directory path  |
 
 Example:
+
 ```shell
 make serve-local BIND=0.0.0.0:8080
 ```
@@ -240,6 +245,7 @@ make serve-local BIND=0.0.0.0:8080
 ## CI/CD
 
 The GitHub Actions workflow (`.github/workflows/build.yml`) runs:
+
 1. Pre-commit checks
 2. Playwright browser tests
 3. Container build verification

@@ -18,21 +18,24 @@ For detailed ASF policies, commit message guidelines, and security consideration
 ## Development Setup
 
 1. **Fork and clone** the repository:
+
    ```shell
    git clone https://github.com/YOUR_USERNAME/tooling-trusted-releases.git
    cd tooling-trusted-releases
    ```
 
 2. **Install dependencies** (includes pre-commit, dev tools, and test dependencies):
+
    ```shell
    # Install uv if you don't have it
    curl -LsSf https://astral.sh/uv/install.sh | sh
-   
+
    # Install all dependencies
    uv sync --frozen --all-groups
    ```
 
 3. **Set up pre-commit hooks:**
+
    ```shell
    uv run pre-commit install
    ```
@@ -42,6 +45,7 @@ For detailed ASF policies, commit message guidelines, and security consideration
 ## Pull Request Workflow
 
 1. **Create a branch** with a descriptive name:
+
    ```shell
    git checkout -b fix-typo-in-docs
    ```
@@ -49,6 +53,7 @@ For detailed ASF policies, commit message guidelines, and security consideration
 2. **Make your changes** following our [code conventions](https://release-test.apache.org/docs/code-conventions)
 
 3. **Run checks** before committing:
+
    ```shell
    make check
    ```
@@ -56,6 +61,7 @@ For detailed ASF policies, commit message guidelines, and security consideration
 4. **Commit** with a clear message (see [commit style](#commit-message-style) below)
 
 5. **Push** your branch:
+
    ```shell
    git push origin your-branch-name
    ```
@@ -73,19 +79,22 @@ For detailed ASF policies, commit message guidelines, and security consideration
 Use clear, concise commit messages:
 
 **Format:**
+
 - First line: imperative mood, sentence case, 50-72 characters
 - No period at the end
 - Use articles ("Fix a bug" not "Fix bug")
 
 **Good examples:**
-```
+
+```text
 Add distribution platform validation to the compose phase
 Fix a bug with sorting version numbers containing release candidates
 Update dependencies
 ```
 
 **Poor examples:**
-```
+
+```text
 fixed stuff
 Updated the code.
 refactoring vote resolution logic

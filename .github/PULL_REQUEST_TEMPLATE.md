@@ -1,4 +1,4 @@
-## Pull Request Summary
+## Pull Request Summary <!-- markdownlint-disable-line MD041 -->
 
 **Meaningful subject (required):**
 

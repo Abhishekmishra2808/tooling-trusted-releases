@@ -20,10 +20,10 @@ For the contribution workflow, see **[CONTRIBUTING.md](https://github.com/apache
 
 That guide covers:
 
-- Development setup
-- Pull request workflow
-- Running tests
-- Code standards summary
+* Development setup
+* Pull request workflow
+* Running tests
+* Code standards summary
 
 **IMPORTANT:** New contributors must introduce themselves on [the development mailing list](mailto:dev@tooling.apache.org) first, to deter spam. Please do not submit a PR until you have introduced yourself.
 
@@ -41,7 +41,7 @@ We follow a consistent style for commit messages. The first line (subject line) 
 
 **Good examples:**
 
-```
+```text
 Add distribution platform validation to the compose phase
 Fix a bug with sorting version numbers containing release candidates
 Move code to delete releases to the storage interface
@@ -50,7 +50,7 @@ Update dependencies
 
 **Poor examples:**
 
-```
+```text
 fixed stuff
 Updated the code.
 refactoring vote resolution logic

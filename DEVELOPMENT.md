@@ -61,6 +61,7 @@ The first build takes several minutes. Subsequent runs are faster due to caching
 Visit [`https://127.0.0.1:8080/`](https://127.0.0.1:8080/) and accept the self-signed certificate.
 
 The container:
+
 - Runs in test mode (`ALLOW_TESTS=1`) with mock authentication
 - Mounts `atr/` for live code changes without rebuilding
 - Auto-reloads when files change
@@ -103,7 +104,7 @@ make serve-local
 
 We recommend using `localhost.apache.org`, which requires adding to `/etc/hosts`:
 
-```
+```text
 127.0.0.1 localhost.apache.org
 ```
 
@@ -120,43 +121,47 @@ Alternatively, use [`https://127.0.0.1:8080/`](https://127.0.0.1:8080/) without 
 ## Development Workflow
 
 1. **Set up pre-commit hooks:**
+
    ```shell
    uv run pre-commit install
    ```
 
 2. **Run code checks:**
+
    ```shell
    make check        # Full checks
    make check-light  # Quick checks
    ```
 
 3. **Run tests:**
+
    ```shell
    sh tests/run-playwright.sh   # Browser tests with Docker Compose
    sh tests/run-e2e.sh          # End-to-end tests
    ```
 
 4. **Build documentation:**
+
    ```shell
    make docs
    ```
 
 ## Key Make Targets
 
-| Target | Description |
-|--------|-------------|
-| `make serve-local` | Run server locally with debug mode |
-| `make check` | Run all pre-commit checks |
-| `make check-light` | Run quick pre-commit checks |
-| `make docs` | Build documentation |
-| `make build-alpine` | Build the Alpine container |
-| `make run-playwright` | Run browser tests |
+| Target                  | Description                        |
+| ----------------------- | ---------------------------------- |
+| `make serve-local`      | Run server locally with debug mode |
+| `make check`            | Run all pre-commit checks          |
+| `make check-light`      | Run quick pre-commit checks        |
+| `make docs`             | Build documentation                |
+| `make build-alpine`     | Build the Alpine container         |
+| `make run-playwright`   | Run browser tests                  |
 
 See [BUILD.md](BUILD.md) for the complete list of build targets.
 
 ## Project Structure
 
-```
+```text
 tooling-trusted-releases/
 ├── atr/              # Main application source code
 │   ├── api/          # API endpoints
