@@ -52,7 +52,7 @@ async def update(args: Update) -> results.Results | None:
         )
 
         # Schedule next update
-        if args.next_schedule_seconds and args.next_schedule_seconds > 0:
+        if args.next_schedule_seconds and (args.next_schedule_seconds > 0):
             next_schedule = datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=args.next_schedule_seconds)
             await tasks.metadata_update(args.asf_uid, schedule=next_schedule, schedule_next=True)
             log.info(

@@ -199,8 +199,8 @@ async def _get_page_data(project_name: str, version_name: str) -> tuple[Sequence
                 .order_by(sql.sqlmodel.desc(via(sql.Task.started)))
                 .all()
             )
-            if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE, sql.TaskStatus.FAILED]
-            or (t.workflow and t.workflow.status in ["in-progress", "failed"])
+            if (t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE, sql.TaskStatus.FAILED])
+            or (t.workflow and (t.workflow.status in ["in-progress", "failed"]))
         ]
 
     return distributions, tasks
@@ -248,13 +248,13 @@ async def _record_form_page(project: str, version: str, staging: bool) -> str:
 
 def _render_distribution_tasks(tasks: Sequence[sql.Task], block: htm.Block, project_name: str, version_name: str):
     failed_tasks = [
-        t for t in tasks if t.status == sql.TaskStatus.FAILED or (t.workflow and t.workflow.status == "failed")
+        t for t in tasks if (t.status == sql.TaskStatus.FAILED) or (t.workflow and (t.workflow.status == "failed"))
     ]
     in_progress_tasks = [
         t
         for t in tasks
-        if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE]
-        or (t.workflow and t.workflow.status not in ["completed", "success", "failed"])
+        if (t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE])
+        or (t.workflow and (t.workflow.status not in ["completed", "success", "failed"]))
     ]
     if len(failed_tasks) > 0:
         summary = f"{len(failed_tasks)} distribution{'s' if (len(failed_tasks) != 1) else ''} failed for this version"
@@ -292,7 +292,7 @@ def _render_task(task: sql.Task) -> htm.Element:
     task_status = task.status.value
     workflow_status = task.workflow.status if task.workflow else ""
     workflow_message = (
-        task.workflow.message if task.workflow and task.workflow.message else workflow_status.capitalize()
+        task.workflow.message if (task.workflow and task.workflow.message) else workflow_status.capitalize()
     )
     if task_status != sql.TaskStatus.COMPLETED:
         return htm.details(".ms-4")[

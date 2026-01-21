@@ -153,7 +153,7 @@ async def status_check(args: WorkflowStatusCheck) -> DistributionWorkflowStatus:
                         (
                             r
                             for r in runs
-                            if r.get("id") == pending.run_id and r.get("path", "").endswith(f"/{pending.workflow_id}")
+                            if (r.get("id") == pending.run_id) and r.get("path", "").endswith(f"/{pending.workflow_id}")
                         ),
                         None,
                     )

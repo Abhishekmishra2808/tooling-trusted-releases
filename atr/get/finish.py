@@ -226,13 +226,13 @@ def _render_distribution_buttons(release: sql.Release) -> htm.Element:
 def _render_distribution_tasks(release: sql.Release, tasks: Sequence[sql.Task]) -> htm.Element:
     """Render current and failed distribution tasks."""
     failed_tasks = [
-        t for t in tasks if t.status == sql.TaskStatus.FAILED or (t.workflow and t.workflow.status == "failed")
+        t for t in tasks if (t.status == sql.TaskStatus.FAILED) or (t.workflow and (t.workflow.status == "failed"))
     ]
     in_progress_tasks = [
         t
         for t in tasks
-        if t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE]
-        or (t.workflow and t.workflow.status not in ["completed", "success", "failed"])
+        if (t.status in [sql.TaskStatus.QUEUED, sql.TaskStatus.ACTIVE])
+        or (t.workflow and (t.workflow.status not in ["completed", "success", "failed"]))
     ]
 
     block = htm.Block()
@@ -552,7 +552,7 @@ def _render_task(task: sql.Task) -> htm.Element:
     task_status = task.status.value
     workflow_status = task.workflow.status if task.workflow else ""
     workflow_message = (
-        task.workflow.message if task.workflow and task.workflow.message else workflow_status.capitalize()
+        task.workflow.message if (task.workflow and task.workflow.message) else workflow_status.capitalize()
     )
     if task_status != sql.TaskStatus.COMPLETED:
         return htm.details(".ms-4")[

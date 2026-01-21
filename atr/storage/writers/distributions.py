@@ -402,7 +402,7 @@ class CommitteeMember(CommitteeParticipant):
 
             # Get lastUpdated timestamp (format: yyyyMMddHHmmss)
             last_updated_elem = versioning.find("lastUpdated")
-            if last_updated_elem is None or not last_updated_elem.text:
+            if (last_updated_elem is None) or (not last_updated_elem.text):
                 e = RuntimeError("No lastUpdated timestamp found in Maven metadata")
                 return outcome.Error(e)
 
@@ -426,8 +426,8 @@ class CommitteeMember(CommitteeParticipant):
                     "start": 0,
                     "docs": [
                         {
-                            "g": group.text if group is not None else "",
-                            "a": artifact.text if artifact is not None else "",
+                            "g": group.text if (group is not None) else "",
+                            "a": artifact.text if (artifact is not None) else "",
                             "v": version,
                             "timestamp": timestamp_ms,
                         }
