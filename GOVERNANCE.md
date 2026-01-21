@@ -2,7 +2,7 @@
 
 This document describes the governance model for Apache Trusted Releases (ATR).
 
-## Project Status
+## Project status
 
 ATR is developed by **ASF Tooling**, an initiative of the Apache Software Foundation rather than a top-level project (TLP). This means ATR follows the development processes and governance structure of Tooling.
 
@@ -17,11 +17,11 @@ ASF Tooling is an ASF initiative launched in 2025, responsible for:
 - Reducing technical debt
 - Enhancing collaboration throughout the ASF
 
-## Decision Making
+## Decision making
 
 TODO: Document the decision-making process for ATR.
 
-## Roles and Responsibilities
+## Roles and responsibilities
 
 TODO: Document roles (committers, PMC members, contributors, etc.)
 
@@ -35,7 +35,7 @@ TODO: Document roles (committers, PMC members, contributors, etc.)
 
 All participants in the ATR community are expected to follow the [ASF Code of Conduct](https://www.apache.org/foundation/policies/conduct.html).
 
-## Related ASF Policies
+## Related ASF policies
 
 - [Apache Release Policy](https://www.apache.org/legal/release-policy.html)
 - [ASF Contributor License Agreements](https://www.apache.org/licenses/contributor-agreements.html)

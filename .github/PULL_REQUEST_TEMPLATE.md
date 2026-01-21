@@ -1,4 +1,4 @@
-## Pull Request Summary <!-- markdownlint-disable-line MD041 -->
+## Pull request summary <!-- markdownlint-disable-line MD041 -->
 
 **Meaningful subject (required):**
 
@@ -20,7 +20,7 @@ Bad:
 
 ---
 
-## Required Acknowledgements
+## Required acknowledgements
 
 Please replace each `[ ]` with `[x]` to confirm.
 PRs missing confirmations may be closed or converted to Draft.
@@ -33,7 +33,7 @@ PRs missing confirmations may be closed or converted to Draft.
 
 ---
 
-## Draft Requirement
+## Draft requirement
 
 If **any** of the following are true:
 
@@ -47,7 +47,7 @@ Convert to a ready PR only after all acknowledgements above can be confirmed.
 
 ---
 
-## Rebase Confirmation Details (optional but encouraged)
+## Rebase confirmation details (optional but encouraged)
 
 <!--
 If helpful, note how the rebase was done:
@@ -57,7 +57,7 @@ If helpful, note how the rebase was done:
 
 ---
 
-## Additional Notes
+## Additional notes
 
 <!--
 Anything reviewers should know:

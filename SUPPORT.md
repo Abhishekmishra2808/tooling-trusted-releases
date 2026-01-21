@@ -2,9 +2,9 @@
 
 This document describes how to get help with Apache Trusted Releases (ATR).
 
-## Getting Help
+## Getting help
 
-### Mailing List (Primary)
+### Mailing list (primary)
 
 The development mailing list is the primary forum for ATR discussions:
 
@@ -18,13 +18,13 @@ Chat with the team in real-time:
 
 💬 **[#apache-trusted-releases](https://the-asf.slack.com/archives/C049WADAAQG)** on ASF Slack
 
-### Issue Tracker
+### Issue tracker
 
 Report bugs or request features:
 
 🐛 **[GitHub Issues](https://github.com/apache/tooling-trusted-releases/issues)**
 
-## Reporting Bugs
+## Reporting bugs
 
 1. Check [existing issues](https://github.com/apache/tooling-trusted-releases/issues) to avoid duplicates
 2. [Create a new issue](https://github.com/apache/tooling-trusted-releases/issues/new) with:
@@ -33,7 +33,7 @@ Report bugs or request features:
    - Expected vs. actual behavior
    - Environment details (OS, browser, etc.)
 
-## Security Issues
+## Security issues
 
 ⚠️ **Do not open public issues for security vulnerabilities.**
 

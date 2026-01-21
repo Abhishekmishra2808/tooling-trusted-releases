@@ -27,7 +27,7 @@ Please review our [issue tracker](https://github.com/apache/tooling-trusted-rele
 > It does not represent final technical or policy decisions for future ASF Tooling products.
 > The code is provided without guarantees regarding stability, security, or backward compatibility.
 
-## Quick Start
+## Quick start
 
 **Run with Docker Compose (recommended):**
 
@@ -54,7 +54,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for more options including running without 
 
 **Online documentation:** https://release-test.apache.org/docs/
 
-## Getting Involved
+## Getting involved
 
 Community feedback is encouraged! If you are an ASF committer or contributor interested in Trusted Releases:
 

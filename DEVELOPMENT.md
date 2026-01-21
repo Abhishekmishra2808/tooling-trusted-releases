@@ -1,4 +1,4 @@
-# Development Guide
+# Development guide
 
 This guide will help you get started with developing ATR. For detailed technical documentation, see the [Developer Guide](https://release-test.apache.org/docs/developer-guide).
 
@@ -19,7 +19,7 @@ ATR can be developed on **Linux** or **macOS**. Windows and other platforms are 
 
 **Installed via `uv sync`:** pre-commit, ruff, pyright, playwright, and other dev/test tools (see `pyproject.toml`).
 
-### Platform-Specific Installation
+### Platform-specific installation
 
 **Alpine Linux:**
 
@@ -38,11 +38,11 @@ rehash
 uv python install 3.13
 ```
 
-## Quick Start
+## Quick start
 
 There are two ways to run the server: in a container (recommended) or directly. **Do not use both methods simultaneously** - they share the same state directory and will conflict.
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker Compose (recommended)
 
 The easiest way to run ATR with all dependencies (CycloneDX, syft, Apache RAT for SBOM generation and license checking):
 
@@ -80,7 +80,7 @@ docker compose run --rm atr bash      # Start container with shell (not ATR)
 docker compose down                   # Stop the server
 ```
 
-### Option 2: Running Directly
+### Option 2: Running directly
 
 For faster iteration without containers:
 
@@ -118,7 +118,7 @@ Alternatively, use [`https://127.0.0.1:8080/`](https://127.0.0.1:8080/) without 
 
 **Initial startup:** It takes 1-2 minutes to fetch committee and project information from the ASF website. Until complete, no existing committees/projects will appear.
 
-## Development Workflow
+## Development workflow
 
 1. **Set up pre-commit hooks:**
 
@@ -146,7 +146,7 @@ Alternatively, use [`https://127.0.0.1:8080/`](https://127.0.0.1:8080/) without 
    make docs
    ```
 
-## Key Make Targets
+## Key Make targets
 
 | Target                  | Description                        |
 | ----------------------- | ---------------------------------- |
@@ -159,7 +159,7 @@ Alternatively, use [`https://127.0.0.1:8080/`](https://127.0.0.1:8080/) without 
 
 See [BUILD.md](BUILD.md) for the complete list of build targets.
 
-## Project Structure
+## Project structure
 
 ```text
 tooling-trusted-releases/
@@ -180,7 +180,7 @@ tooling-trusted-releases/
 └── tests/            # Test configuration and e2e tests
 ```
 
-## Useful Resources
+## Useful resources
 
 - **[Overview of the Code](https://release-test.apache.org/docs/overview-of-the-code)** - High-level architecture
 - **[Running and Creating Tests](https://release-test.apache.org/docs/running-and-creating-tests)** - Testing guide
@@ -190,7 +190,7 @@ tooling-trusted-releases/
 
 ## Troubleshooting
 
-### Certificate Issues
+### Certificate issues
 
 If you encounter TLS certificate problems when running directly:
 
@@ -200,7 +200,7 @@ If you encounter TLS certificate problems when running directly:
 
 > **Security note:** `mkcert -install` creates a CA valid for 10 years for your system, Java, and Firefox. If the private key (`rootCA-key.pem` in the directory shown by `mkcert -CAROOT`) is ever leaked, anyone could create certificates trusted by your system. See the [mkcert caveats](https://github.com/FiloSottile/mkcert#installation).
 
-### Container Issues
+### Container issues
 
 If Docker Compose fails:
 
@@ -211,7 +211,7 @@ docker compose build --no-cache
 docker compose up
 ```
 
-### Session Caching (Local Development)
+### Session caching (local development)
 
 Developers without LDAP credentials can cache session information:
 

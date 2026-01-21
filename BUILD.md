@@ -1,4 +1,4 @@
-# Build Guide
+# Build guide
 
 This guide covers building ATR and its components. For development setup, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
@@ -27,9 +27,9 @@ rehash
 uv python install 3.13
 ```
 
-## Container Build
+## Container build
 
-### Build the Alpine Container
+### Build the Alpine container
 
 ```shell
 make build-alpine
@@ -39,7 +39,7 @@ make build
 
 This runs `scripts/build` to create the `tooling-trusted-release` container image using `Dockerfile.alpine`.
 
-### Run the Container
+### Run the container
 
 ```shell
 make certs-local  # Generate certificates first
@@ -61,9 +61,9 @@ The compose configuration:
 - Enables test mode (`ALLOW_TESTS=1`)
 - Exposes port 8080
 
-## Documentation Build
+## Documentation build
 
-### Build All Documentation
+### Build all documentation
 
 ```shell
 make docs
@@ -76,33 +76,33 @@ This command:
 3. Converts Markdown to HTML using cmark
 4. Post-processes HTML files
 
-### Build Without Validation
+### Build without validation
 
 ```shell
 make build-docs
 ```
 
-### How Documentation Build Works
+### How documentation build works
 
 The documentation system uses `scripts/docs_build.py` to automatically generate navigation from the table of contents in `atr/docs/index.md`. When you reorganize documentation, just edit the table of contents and run `make docs` to update all navigation links.
 
 For details, see [Build Processes](https://release-test.apache.org/docs/build-processes).
 
-## Python Dependencies
+## Python dependencies
 
-### Install All Dependencies
+### Install all dependencies
 
 ```shell
 uv sync --frozen --all-groups
 ```
 
-### Install Production Dependencies Only
+### Install production dependencies only
 
 ```shell
 uv sync --frozen --no-dev
 ```
 
-### Update Dependencies
+### Update dependencies
 
 ```shell
 make update-deps
@@ -110,9 +110,9 @@ make update-deps
 
 This updates `uv.lock` and runs `pre-commit autoupdate`.
 
-## TLS Certificates
+## TLS certificates
 
-### For Local Development (mkcert)
+### For local development (mkcert)
 
 ```shell
 make certs-local
@@ -120,7 +120,7 @@ make certs-local
 
 Creates certificates in `state/hypercorn/secrets/` using mkcert.
 
-### Self-Signed Certificates
+### Self-signed certificates
 
 ```shell
 make certs
@@ -128,7 +128,7 @@ make certs
 
 Generates self-signed certificates using `scripts/generate-certificates`.
 
-## Frontend Assets
+## Frontend assets
 
 ### Build Bootstrap
 
@@ -136,7 +136,7 @@ Generates self-signed certificates using `scripts/generate-certificates`.
 make build-bootstrap
 ```
 
-### Bump Bootstrap Version
+### Bump Bootstrap version
 
 ```shell
 make bump-bootstrap BOOTSTRAP_VERSION=5.3.4
@@ -148,15 +148,15 @@ make bump-bootstrap BOOTSTRAP_VERSION=5.3.4
 make build-ts
 ```
 
-## Test Builds
+## Test builds
 
-### Build Playwright Container
+### Build Playwright container
 
 ```shell
 make build-playwright
 ```
 
-### Run Playwright Tests
+### Run Playwright tests
 
 ```shell
 make run-playwright       # Fast tests
@@ -169,15 +169,15 @@ Or use Docker Compose:
 sh tests/run-playwright.sh
 ```
 
-### Run End-to-End Tests
+### Run end-to-end tests
 
 ```shell
 sh tests/run-e2e.sh
 ```
 
-## Make Targets Reference
+## Make targets reference
 
-### Build Targets
+### Build targets
 
 | Target             | Description                            |
 | ------------------ | -------------------------------------- |
@@ -188,7 +188,7 @@ sh tests/run-e2e.sh
 | `build-playwright` | Build Playwright test container        |
 | `build-ts`         | Compile TypeScript                     |
 
-### Run Targets
+### Run targets
 
 | Target                  | Description                         |
 | ----------------------- | ----------------------------------- |
@@ -198,7 +198,7 @@ sh tests/run-e2e.sh
 | `run-playwright`        | Run Playwright tests (fast)         |
 | `run-playwright-slow`   | Run Playwright tests (full)         |
 
-### Dependency Targets
+### Dependency targets
 
 | Target        | Description                            |
 | ------------- | -------------------------------------- |
@@ -206,7 +206,7 @@ sh tests/run-e2e.sh
 | `sync-all`    | Install all dependencies including dev |
 | `update-deps` | Update and lock dependencies           |
 
-### Code Quality Targets
+### Code quality targets
 
 | Target         | Description                    |
 | -------------- | ------------------------------ |
@@ -215,7 +215,7 @@ sh tests/run-e2e.sh
 | `check-heavy`  | Run comprehensive checks       |
 | `check-extra`  | Run interface ordering checks  |
 
-### Utility Targets
+### Utility targets
 
 | Target             | Description                        |
 | ------------------ | ---------------------------------- |
@@ -226,7 +226,7 @@ sh tests/run-e2e.sh
 | `commit`           | Add, commit, pull, push workflow   |
 | `ipython`          | Start IPython shell with project   |
 
-## Configuration Variables
+## Configuration variables
 
 The Makefile supports these variables:
 

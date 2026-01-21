@@ -4,18 +4,18 @@ Thank you for your interest in contributing to Apache Trusted Releases (ATR)! Th
 
 For detailed ASF policies, commit message guidelines, and security considerations, see the [contribution policies guide](https://release-test.apache.org/docs/how-to-contribute).
 
-## Before You Start
+## Before you start
 
 > **IMPORTANT:** New contributors must introduce themselves on the [development mailing list](mailto:dev@tooling.apache.org) first, to deter spam. Please do not submit a PR until you have introduced yourself, otherwise it will likely be rejected.
 
 **Subscribe to the mailing list:** Send an email with empty subject and body to [dev-subscribe@tooling.apache.org](mailto:dev-subscribe@tooling.apache.org) and reply to the automated response.
 
-## Finding Something to Work On
+## Finding something to work on
 
 - Browse the [issue tracker](https://github.com/apache/tooling-trusted-releases/issues) for open issues
 - For new features or bugs, [create an issue](https://github.com/apache/tooling-trusted-releases/issues/new) to discuss before starting work
 
-## Development Setup
+## Development setup
 
 1. **Fork and clone** the repository:
 
@@ -42,7 +42,7 @@ For detailed ASF policies, commit message guidelines, and security consideration
 
 4. **Run the server:** See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed instructions.
 
-## Pull Request Workflow
+## Pull request workflow
 
 1. **Create a branch** with a descriptive name:
 
@@ -74,7 +74,7 @@ For detailed ASF policies, commit message guidelines, and security consideration
 
 7. **Participate in review** - we may request changes
 
-## Commit Message Style
+## Commit message style
 
 Use clear, concise commit messages:
 
@@ -102,7 +102,7 @@ refactoring vote resolution logic
 
 For complex changes, add a body separated by a blank line explaining what and why (not how).
 
-## Code Standards Summary
+## Code standards summary
 
 - **Python:** Follow PEP 8, use double quotes, no `# noqa` or `# type: ignore`
 - **HTML:** Use Bootstrap classes, avoid custom CSS
@@ -111,7 +111,7 @@ For complex changes, add a body separated by a blank line explaining what and wh
 
 See the [full code conventions](https://release-test.apache.org/docs/code-conventions) for complete guidelines.
 
-## Running Tests
+## Running tests
 
 ```shell
 # Browser tests (requires Docker)
@@ -124,7 +124,7 @@ sh tests/run-e2e.sh
 make check-light
 ```
 
-## ASF Requirements
+## ASF requirements
 
 ### Contributor License Agreement
 
@@ -140,7 +140,7 @@ All contributions are licensed under [Apache License 2.0](https://www.apache.org
 
 Follow the [ASF Code of Conduct](https://www.apache.org/foundation/policies/conduct.html).
 
-## Security Considerations
+## Security considerations
 
 ATR's primary goal is to prevent supply chain attacks. When contributing:
 
@@ -150,13 +150,13 @@ ATR's primary goal is to prevent supply chain attacks. When contributing:
 - Consider security implications of your changes
 - Report security issues via the [ASF security process](https://www.apache.org/security/) (not public issues)
 
-## Getting Help
+## Getting help
 
 - **Mailing list:** [dev@tooling.apache.org](https://lists.apache.org/list.html?dev@tooling.apache.org)
 - **Slack:** [#apache-trusted-releases](https://the-asf.slack.com/archives/C049WADAAQG) on ASF Slack
 - **Issue tracker:** Comment on relevant issues or PRs
 - **Documentation:** [Developer Guide](https://release-test.apache.org/docs/developer-guide)
 
-## Alternative: Email Patches
+## Alternative: email patches
 
 If you prefer not to use GitHub, you can [email patches](https://lists.apache.org/list.html?dev@tooling.apache.org) using standard Git patch formatting.
