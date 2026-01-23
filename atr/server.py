@@ -294,10 +294,7 @@ def _app_setup_lifecycle(app: base.QuartApp, app_config: type[config.AppConfig])
 
         await db.shutdown_database()
 
-        if audit_listener := app.extensions.get("audit_listener"):
-            audit_listener.stop()
-        if listener := app.extensions.get("logging_listener"):
-            listener.stop()
+        await _app_shutdown_log_listeners(app)
 
         app.background_tasks.clear()
 
@@ -345,7 +342,7 @@ def _app_setup_logging(app: base.QuartApp, config_mode: config.Mode, app_config:
     listener.start()
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.getLevelNamesMapping()[app_config.LOG_LEVEL],
         handlers=[log.StructlogQueueHandler(log_queue)],
         force=True,
     )
@@ -382,6 +379,28 @@ def _app_setup_logging(app: base.QuartApp, config_mode: config.Mode, app_config:
     audit_logger.handlers.clear()
     audit_logger.addHandler(logging.handlers.QueueHandler(audit_queue))
     audit_logger.propagate = False
+
+    # Request logs
+    request_handler = logging.FileHandler(app_config.REQUEST_LOG_FILE, encoding="utf-8")
+    request_handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.processors.JSONRenderer(),
+            ],
+            foreign_pre_chain=shared_processors,
+        )
+    )
+    request_queue: queue.Queue[logging.LogRecord] = queue.Queue(-1)
+    request_listener = logging.handlers.QueueListener(request_queue, request_handler)
+    request_listener.start()
+    app.extensions["request_listener"] = request_listener
+
+    request_logger = logging.getLogger("atr.request")
+    request_logger.setLevel(logging.INFO)
+    request_logger.handlers.clear()
+    request_logger.addHandler(log.StructlogQueueHandler(request_queue))
+    request_logger.propagate = False
 
     # Enable debug output for atr.* in DEBUG mode
     if config_mode == config.Mode.Debug:
@@ -495,6 +514,15 @@ def _app_setup_security_headers(app: base.QuartApp) -> None:
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
+
+
+async def _app_shutdown_log_listeners(app):
+    if audit_listener := app.extensions.get("audit_listener"):
+        audit_listener.stop()
+    if request_listener := app.extensions.get("request_listener"):
+        request_listener.stop()
+    if listener := app.extensions.get("logging_listener"):
+        listener.stop()
 
 
 def _create_app(app_config: type[config.AppConfig]) -> base.QuartApp:
