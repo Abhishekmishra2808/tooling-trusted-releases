@@ -428,6 +428,7 @@ def _app_setup_request_lifecycle(app: base.QuartApp) -> None:
             path=quart.request.path,
             status=response.status_code,
             remote_addr=quart.request.remote_addr,
+            user_agent=quart.request.user_agent.string,
         )
         return response
 
