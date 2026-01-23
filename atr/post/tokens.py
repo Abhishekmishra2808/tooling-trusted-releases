@@ -21,6 +21,7 @@ import secrets
 from typing import Final
 
 import quart
+import quart_rate_limiter as rate_limiter
 
 import atr.blueprints.post as post
 import atr.get as get
@@ -34,6 +35,7 @@ _EXPIRY_DAYS: Final[int] = 180
 
 
 @post.committer("/tokens/jwt")
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @post.empty()
 async def jwt_post(session: web.Committer) -> web.QuartResponse:
     jwt_token = jwtoken.issue(session.uid)
@@ -41,6 +43,7 @@ async def jwt_post(session: web.Committer) -> web.QuartResponse:
 
 
 @post.committer("/tokens")
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @post.form(shared.tokens.TokenForm)
 async def tokens(session: web.Committer, token_form: shared.tokens.TokenForm) -> web.WerkzeugResponse:
     match token_form:

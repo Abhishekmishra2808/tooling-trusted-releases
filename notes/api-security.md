@@ -35,4 +35,4 @@ We do not presently have logging or auditing of the logging for the API. Once we
 
 We do not use all available JWT fields, such as `iss` (issuer).
 
-We do not rate limit PAT or JWT issuance.
+Security-related actions, such as PAT and JWT issuance, are rate limited to 10 per hour per IP/ASF UID.
