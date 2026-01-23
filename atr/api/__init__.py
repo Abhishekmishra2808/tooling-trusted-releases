@@ -14,8 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-
+import datetime
 import hashlib
 import pathlib
 from typing import Any, Final, Literal
@@ -24,6 +23,7 @@ import aiofiles.os
 import asfquart.base as base
 import pgpy
 import quart
+import quart_rate_limiter as rate_limiter
 import quart_schema
 import sqlalchemy
 import sqlmodel
@@ -34,6 +34,7 @@ import atr.config as config
 import atr.db as db
 import atr.db.interaction as interaction
 import atr.jwtoken as jwtoken
+import atr.log as log
 import atr.models as models
 import atr.models.sql as sql
 import atr.principal as principal
@@ -450,6 +451,7 @@ async def ignore_list(committee_name: str) -> DictResponse:
 
 
 @api.route("/jwt/create", methods=["POST"])
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @quart_schema.validate_request(models.api.JwtCreateArgs)
 async def jwt_create(data: models.api.JwtCreateArgs) -> DictResponse:
     """
@@ -464,6 +466,8 @@ async def jwt_create(data: models.api.JwtCreateArgs) -> DictResponse:
         wafc = write.as_foundation_committer()
         jwt = await wafc.tokens.issue_jwt(data.pat)
 
+    log.add_context(user_id=asf_uid)
+
     return models.api.JwtCreateResults(
         endpoint="/jwt/create",
         asfuid=data.asfuid,
@@ -472,6 +476,7 @@ async def jwt_create(data: models.api.JwtCreateArgs) -> DictResponse:
 
 
 @api.route("/key/add", methods=["POST"])
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @jwtoken.require
 @quart_schema.security_scheme([{"BearerAuth": []}])
 @quart_schema.validate_request(models.api.KeyAddArgs)
@@ -538,6 +543,7 @@ async def key_delete(data: models.api.KeyDeleteArgs) -> DictResponse:
 
 
 @api.route("/key/get/<fingerprint>")
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @quart_schema.validate_response(models.api.KeyGetResults, 200)
 async def key_get(fingerprint: str) -> DictResponse:
     """
@@ -557,6 +563,7 @@ async def key_get(fingerprint: str) -> DictResponse:
 
 
 @api.route("/keys/upload", methods=["POST"])
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @jwtoken.require
 @quart_schema.security_scheme([{"BearerAuth": []}])
 @quart_schema.validate_request(models.api.KeysUploadArgs)
@@ -614,6 +621,7 @@ async def keys_upload(data: models.api.KeysUploadArgs) -> DictResponse:
 
 
 @api.route("/keys/user/<asf_uid>")
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @quart_schema.validate_response(models.api.KeysUserResults, 200)
 async def keys_user(asf_uid: str) -> DictResponse:
     """
@@ -793,6 +801,7 @@ async def publisher_release_announce(data: models.api.PublisherReleaseAnnounceAr
 
 
 @api.route("/publisher/ssh/register", methods=["POST"])
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @quart_schema.validate_request(models.api.PublisherSshRegisterArgs)
 async def publisher_ssh_register(data: models.api.PublisherSshRegisterArgs) -> DictResponse:
     """
@@ -1126,6 +1135,7 @@ async def signature_provenance(data: models.api.SignatureProvenanceArgs) -> Dict
 
 
 @api.route("/ssh-key/add", methods=["POST"])
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @jwtoken.require
 @quart_schema.security_scheme([{"BearerAuth": []}])
 @quart_schema.validate_request(models.api.SshKeyAddArgs)
@@ -1147,6 +1157,7 @@ async def ssh_key_add(data: models.api.SshKeyAddArgs) -> DictResponse:
 
 
 @api.route("/ssh-key/delete", methods=["POST"])
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @jwtoken.require
 @quart_schema.security_scheme([{"BearerAuth": []}])
 @quart_schema.validate_request(models.api.SshKeyDeleteArgs)
@@ -1168,6 +1179,7 @@ async def ssh_key_delete(data: models.api.SshKeyDeleteArgs) -> DictResponse:
 
 
 @api.route("/ssh-keys/list/<asf_uid>")
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @quart_schema.validate_querystring(models.api.SshKeysListQuery)
 async def ssh_keys_list(asf_uid: str, query_args: models.api.SshKeysListQuery) -> DictResponse:
     """
@@ -1224,6 +1236,7 @@ async def tasks_list(query_args: models.api.TasksListQuery) -> DictResponse:
 
 
 @api.route("/user/info")
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @jwtoken.require
 @quart_schema.security_scheme([{"BearerAuth": []}])
 @quart_schema.validate_response(models.api.UserInfoResults, 200)
@@ -1243,6 +1256,7 @@ async def user_info() -> DictResponse:
 
 
 @api.route("/users/list")
+@rate_limiter.rate_limit(10, datetime.timedelta(hours=1))
 @quart_schema.validate_response(models.api.UsersListResults, 200)
 async def users_list() -> DictResponse:
     """

@@ -412,13 +412,7 @@ def _app_setup_request_lifecycle(app: base.QuartApp) -> None:
 
     @app.before_request
     async def bind_request_context_vars() -> None:
-        log.clear_context()
-        log.add_context(request_id=str(uuid.uuid4()))
-
-        # Bind user_id if authenticated
-        session = await asfquart.session.read()
-        if session is not None:
-            log.add_context(user_id=session.uid)
+        await _reset_request_log_context()
 
     @app.after_request
     async def log_request(response: quart.Response) -> quart.Response:
@@ -816,6 +810,33 @@ def _register_routes(app: base.QuartApp) -> None:  # noqa: C901
         if quart.request.path.startswith("/api"):
             return quart.jsonify({"error": "404 Not Found"}), 404
         return await template.render("notfound.html", error="404 Not Found", traceback="", status_code=404), 404
+
+    @app.errorhandler(429)
+    async def handle_rate_limit(e):
+        # Set up logging context since before_request doesn't run for rate-limited requests
+        await _reset_request_log_context()
+
+        if quart.request.path.startswith("/api"):
+            return quart.jsonify(
+                {
+                    "error": "rate_limit_exceeded",
+                    "detail": "Too many requests, please retry later.",
+                    "retry_after": getattr(e, "retry_after", None),
+                }
+            ), 429
+        return await template.render("error.html", error="429 Too Many Requests", traceback="", status_code=429), 429
+
+
+async def _reset_request_log_context():
+    log.clear_context()
+    log.add_context(request_id=str(uuid.uuid4()))
+    session = await asfquart.session.read()
+    if session is not None:
+        log.add_context(user_id=session.uid)
+    elif hasattr(quart.g, "jwt_claims"):
+        claims = getattr(quart.g, "jwt_claims", {})
+        asf_uid = claims.get("sub")
+        log.add_context(user_id=asf_uid)
 
 
 def _set_file_permissions_to_read_only() -> None:
