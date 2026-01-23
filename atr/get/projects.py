@@ -322,7 +322,10 @@ def _render_compose_form(project: sql.Project) -> htm.Element:
     ]
 
     schema = strictyaml.EmptyDict() | strictyaml.MapPattern(strictyaml.Str(), strictyaml.UniqueSeq(strictyaml.Str()))
-    atr_tag_yaml = strictyaml.as_document(project.policy_file_tag_mappings, schema).as_yaml()
+    if project.policy_file_tag_mappings:
+        atr_tag_yaml = strictyaml.as_document(project.policy_file_tag_mappings, schema).as_yaml()
+    else:
+        atr_tag_yaml = ""
     with card.block(htm.div, classes=".card-body") as card_body:
         form.render_block(
             card_body,

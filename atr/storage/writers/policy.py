@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import strictyaml
+import strictyaml.ruamel.error as error
 
 import atr.db as db
 import atr.models as models
@@ -97,8 +98,6 @@ class CommitteeMember(CommitteeParticipant):
         project_name = form.project_name
         _, release_policy = await self.__get_or_create_policy(project_name)
 
-        if ".." in form.file_tag_mappings:
-            raise ValueError("File tag mappings may not contain '..'")
         try:
             schema = strictyaml.EmptyDict() | strictyaml.MapPattern(
                 strictyaml.Str(),
@@ -107,12 +106,18 @@ class CommitteeMember(CommitteeParticipant):
                 ),
             )
             atr_tags_yaml = strictyaml.load(form.file_tag_mappings, schema)
-        except strictyaml.exceptions.YAMLValidationError:
+        except (strictyaml.exceptions.YAMLValidationError, error.YAMLError):
             raise ValueError("Invalid file tag mappings")
         atr_tags_data = atr_tags_yaml.data
         if not isinstance(atr_tags_data, dict):
             raise ValueError("Invalid file tag mappings")
         atr_tags_dict: dict[str, list[str]] = atr_tags_data
+        for key, values in atr_tags_dict.items():
+            if ".." in key:
+                raise ValueError("File tag mapping keys may not contain '..'")
+            for value in values:
+                if ".." in value:
+                    raise ValueError("File tag mapping values may not contain '..'")
         release_policy.source_artifact_paths = _split_lines(form.source_artifact_paths)
         release_policy.license_check_mode = form.license_check_mode  # pyright: ignore[reportAttributeAccessIssue]
         release_policy.source_excludes_lightweight = _split_lines_verbatim(form.source_excludes_lightweight)
