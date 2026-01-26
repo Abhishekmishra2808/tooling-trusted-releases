@@ -28,9 +28,11 @@
     {{ sha512_form|safe }}
   </div>
 
-  {% if (file_path.endswith(".tar.gz") or file_path.endswith(".zip") or file_path.endswith(".tgz")) and is_viewing_as_admin_fn(current_user.uid) %}
+  {% if (file_path.endswith(".tar.gz") or file_path.endswith(".zip") or file_path.endswith(".jar") or file_path.endswith(".tgz")) and is_viewing_as_admin_fn(current_user.uid) %}
     <h3>Generate SBOM</h3>
-    <p>NOTE: This functionality is currently not available.</p>
+    <div class="alert-info">
+      <p>NOTE: This functionality is in early release.</p>
+    </div>
     <p>Generate a CycloneDX Software Bill of Materials (SBOM) file for this artifact.</p>
     {{ sbom_form|safe }}
   {% endif %}

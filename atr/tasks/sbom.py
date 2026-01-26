@@ -150,7 +150,9 @@ async def osv_scan(args: FileArgs) -> results.Results | None:
         components.append(
             results.OSVComponent(
                 purl=v.ref,
-                vulnerabilities=[results.VulnerabilityDetails.model_validate(vuln) for vuln in v.vulnerabilities],
+                vulnerabilities=[
+                    results.VulnerabilityDetails.model_validate(vuln.model_dump()) for vuln in v.vulnerabilities
+                ],
             )
         )
 
@@ -394,7 +396,7 @@ def _extracted_dir(temp_dir: str) -> str | None:
             if extract_dir is None:
                 extract_dir = dir_path
             else:
-                raise ValueError(f"Multiple root directories found: {extract_dir}, {dir_path}")
+                return temp_dir
     if extract_dir is None:
         extract_dir = temp_dir
     return extract_dir

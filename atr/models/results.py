@@ -70,6 +70,7 @@ class VulnerabilityDetails(schema.Lax):
     severity: list[dict[str, Any]] | None = None
     published: str | None = None
     modified: str
+    affected: list[dict[str, Any]] | None = None
     database_specific: dict[str, Any] = schema.Field(default={})
 
 
