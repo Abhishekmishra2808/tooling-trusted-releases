@@ -266,6 +266,8 @@ class CommitteeMember(CommitteeParticipant):
     ) -> str:
         # Attach the existing release to the session
         release = await self.__data.merge(release)
+        if release.phase != sql.ReleasePhase.RELEASE_CANDIDATE:
+            raise ValueError("Release is not in the candidate phase")
 
         if vote_result == "passed":
             release.phase = sql.ReleasePhase.RELEASE_PREVIEW
