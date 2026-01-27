@@ -21,6 +21,7 @@ import asyncio
 import contextlib
 import datetime
 import fcntl
+import logging
 import multiprocessing
 import os
 import pathlib
@@ -117,6 +118,20 @@ class ApiOnlyOpenAPIProvider(quart_schema.OpenAPIProvider):
         for rule in super().generate_rules():
             if rule.rule.startswith("/api"):
                 yield rule
+
+
+class SSLShutdownFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not record.exc_info:
+            return True
+        exc = record.exc_info[1]
+        if not isinstance(exc, TimeoutError):
+            return True
+        if not exc.args:
+            return True
+        if exc.args[0] == "SSL shutdown timed out":
+            return False
+        return True
 
 
 def _app_create_base(app_config: type[config.AppConfig]) -> base.QuartApp:
@@ -334,6 +349,10 @@ def _app_setup_logging(app: base.QuartApp, config_mode: config.Mode, app_config:
     )
 
     loggers.configure_structlog(shared_processors)
+
+    # Ignore SSL shutdown timeout errors from asyncio in Hypercorn
+    ssl_shutdown_filter = SSLShutdownFilter()
+    logging.getLogger("asyncio").addFilter(ssl_shutdown_filter)
 
     # Audit logger - JSON to dedicated file via queue
     audit_listener = loggers.setup_dedicated_file_logger(
