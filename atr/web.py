@@ -170,6 +170,7 @@ class Committer:
         with_release_policy: bool = False,
         with_project_release_policy: bool = False,
         with_revisions: bool = False,
+        with_distributions: bool = False,
     ) -> sql.Release:
         # We reuse db.NOT_SET as an entirely different sentinel
         # TODO: We probably shouldn't do that, or should make it clearer
@@ -191,6 +192,7 @@ class Committer:
                     _release_policy=with_release_policy,
                     _project_release_policy=with_project_release_policy,
                     _revisions=with_revisions,
+                    _distributions=with_distributions,
                 ).demand(base.ASFQuartException("Release does not exist", errorcode=404))
         else:
             release = await data.release(
@@ -202,6 +204,7 @@ class Committer:
                 _release_policy=with_release_policy,
                 _project_release_policy=with_project_release_policy,
                 _revisions=with_revisions,
+                _distributions=with_distributions,
             ).demand(base.ASFQuartException("Release does not exist", errorcode=404))
         return release
 

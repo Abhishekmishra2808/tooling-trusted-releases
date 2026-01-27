@@ -470,6 +470,7 @@ class Session(sqlalchemy.ext.asyncio.AsyncSession):
         _release_policy: bool = False,
         _project_release_policy: bool = False,
         _revisions: bool = False,
+        _distributions: bool = False,
     ) -> Query[sql.Release]:
         query = sqlmodel.select(sql.Release)
 
@@ -509,6 +510,8 @@ class Session(sqlalchemy.ext.asyncio.AsyncSession):
             query = query.options(joined_load_nested(sql.Release.project, sql.Project.release_policy))
         if _revisions:
             query = query.options(select_in_load(sql.Release.revisions))
+        if _distributions:
+            query = query.options(joined_load(sql.Release.distributions))
 
         return Query(self, query)
 

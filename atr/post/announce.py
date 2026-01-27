@@ -47,7 +47,13 @@ async def selected(
 
     # Get the release to find the revision number
     release = await session.release(
-        project_name, version_name, with_committee=True, phase=sql.ReleasePhase.RELEASE_PREVIEW
+        project_name,
+        version_name,
+        with_committee=True,
+        phase=sql.ReleasePhase.RELEASE_PREVIEW,
+        with_distributions=True,
+        with_release_policy=True,
+        with_project_release_policy=True,
     )
     preview_revision_number = release.unwrap_revision_number
 
@@ -60,6 +66,24 @@ async def selected(
             project_name=project_name,
             version_name=version_name,
         )
+
+    policy = release.release_policy or release.project.release_policy
+    if policy and policy.file_tag_mappings:
+        missing = []
+        tags = policy.file_tag_mappings.keys()
+        distributions = [d.platform.value.gh_slug for d in release.distributions]
+        for tag in tags:
+            if tag not in distributions:
+                missing.append(tag)
+        if missing:
+            return await session.redirect(
+                get.announce.selected,
+                error=f"This release cannot be announced until the following distributions have been recorded: {
+                    ', '.join(missing)
+                }",
+                project_name=project_name,
+                version_name=version_name,
+            )
 
     # Validate that the subject template hasn't changed
     subject_template = await construct.announce_release_subject_default(project_name)

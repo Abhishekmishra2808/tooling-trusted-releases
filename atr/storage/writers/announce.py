@@ -125,6 +125,8 @@ class CommitteeMember(CommitteeParticipant):
             latest_revision_number=preview_revision_number,
             _project_release_policy=True,
             _revisions=True,
+            _distributions=True,
+            _release_policy=True,
         ).demand(
             storage.AccessError(
                 f"Release {project_name} {version_name} {preview_revision_number} does not exist",
@@ -132,6 +134,21 @@ class CommitteeMember(CommitteeParticipant):
         )
         if (committee := release.project.committee) is None:
             raise storage.AccessError("Release has no committee - Invalid state")
+
+        policy = release.release_policy or release.project.release_policy
+        if policy and policy.file_tag_mappings:
+            missing = []
+            tags = policy.file_tag_mappings.keys()
+            distributions = [d.platform.value.gh_slug for d in release.distributions]
+            for tag in tags:
+                if tag not in distributions:
+                    missing.append(tag)
+            if missing:
+                raise storage.AccessError(
+                    f"This release cannot be announced until the following distributions have been recorded: {
+                        ', '.join(missing)
+                    }"
+                )
 
         # Fetch the current subject template and verify the hash
         subject_template = await construct.announce_release_subject_default(project_name)

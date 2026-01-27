@@ -40,9 +40,7 @@ async def selected(session: web.Committer, project_name: str, version_name: str)
     """Allow the user to announce a release preview."""
     await session.check_access(project_name)
 
-    release = await session.release(
-        project_name, version_name, with_committee=True, phase=sql.ReleasePhase.RELEASE_PREVIEW
-    )
+    release = await _get_page_data(project_name, session, version_name)
 
     latest_revision_number = release.latest_revision_number
     if latest_revision_number is None:
@@ -102,6 +100,19 @@ async def selected(session: web.Committer, project_name: str, version_name: str)
         content=content,
         javascripts=["announce-confirm"],
     )
+
+
+async def _get_page_data(project_name: str, session: web.Committer, version_name: str) -> sql.Release:
+    release = await session.release(
+        project_name,
+        version_name,
+        with_committee=True,
+        phase=sql.ReleasePhase.RELEASE_PREVIEW,
+        with_distributions=True,
+        with_release_policy=True,
+        with_project_release_policy=True,
+    )
+    return release
 
 
 def _render_body_field(default_body: str, project_name: str) -> htm.Element:
@@ -209,37 +220,55 @@ async def _render_page(
     ]
     page.append(_render_release_card(release))
     page.h2["Announce this release"]
-    page.p[f"This form will send an announcement to the ASF {util.USER_TESTS_ADDRESS} mailing list."]
 
-    custom_subject_widget = _render_subject_field(default_subject, release.project.name)
-    custom_body_widget = _render_body_field(default_body, release.project.name)
-    custom_mailing_list_widget = _render_mailing_list_with_warning(mailing_list_choices, util.USER_TESTS_ADDRESS)
+    announce_msg = ""
+    policy = release.release_policy or release.project.release_policy
+    if policy and policy.file_tag_mappings:
+        missing = []
+        tags = policy.file_tag_mappings.keys()
+        distributions = [d.platform.value.gh_slug for d in release.distributions]
+        for tag in tags:
+            if tag not in distributions:
+                missing.append(tag)
+        if missing:
+            announce_msg = f"This release cannot be announced until the following distributions have been recorded: {
+                ', '.join(missing)
+            }"
 
-    # Custom widget for download_path_suffix with custom documentation
-    download_path_widget = _render_download_path_field(default_download_path_suffix, download_path_description)
+    if not announce_msg:
+        page.p[f"This form will send an announcement to the ASF {util.USER_TESTS_ADDRESS} mailing list."]
 
-    defaults_dict = {
-        "revision_number": release.unwrap_revision_number,
-        "subject_template_hash": subject_template_hash,
-        "body": default_body,
-    }
+        custom_subject_widget = _render_subject_field(default_subject, release.project.name)
+        custom_body_widget = _render_body_field(default_body, release.project.name)
+        custom_mailing_list_widget = _render_mailing_list_with_warning(mailing_list_choices, util.USER_TESTS_ADDRESS)
 
-    form.render_block(
-        page,
-        model_cls=shared.announce.AnnounceForm,
-        action=util.as_url(post.announce.selected, project_name=release.project.name, version_name=release.version),
-        submit_label="Send announcement email",
-        defaults=defaults_dict,
-        custom={
-            "subject": custom_subject_widget,
-            "body": custom_body_widget,
-            "mailing_list": custom_mailing_list_widget,
-            "download_path_suffix": download_path_widget,
-        },
-        form_classes=".atr-canary.py-4.px-5.mb-4.border.rounded",
-        border=True,
-        wider_widgets=True,
-    )
+        # Custom widget for download_path_suffix with custom documentation
+        download_path_widget = _render_download_path_field(default_download_path_suffix, download_path_description)
+
+        defaults_dict = {
+            "revision_number": release.unwrap_revision_number,
+            "subject_template_hash": subject_template_hash,
+            "body": default_body,
+        }
+
+        form.render_block(
+            page,
+            model_cls=shared.announce.AnnounceForm,
+            action=util.as_url(post.announce.selected, project_name=release.project.name, version_name=release.version),
+            submit_label="Send announcement email",
+            defaults=defaults_dict,
+            custom={
+                "subject": custom_subject_widget,
+                "body": custom_body_widget,
+                "mailing_list": custom_mailing_list_widget,
+                "download_path_suffix": download_path_widget,
+            },
+            form_classes=".atr-canary.py-4.px-5.mb-4.border.rounded",
+            border=True,
+            wider_widgets=True,
+        )
+    else:
+        page.p[htm.strong[announce_msg]]
 
     return page.collect()
 

@@ -81,6 +81,19 @@ async def selected(
         await quart.flash("Preview revision directory not found.", "error")
         return await session.redirect(root.index)
 
+    announce_msg = ""
+    if release.release_policy and release.release_policy.file_tag_mappings:
+        missing = []
+        tags = release.release_policy.file_tag_mappings.keys()
+        distributions = [d.platform.value.gh_slug for d in release.distributions]
+        for tag in tags:
+            if tag not in distributions:
+                missing.append(tag)
+        if missing:
+            announce_msg = f"This release cannot be announced until the following distributions have been recorded: {
+                ', '.join(missing)
+            }"
+
     return await _render_page(
         release=release,
         source_files_rel=source_files_rel,
@@ -88,6 +101,7 @@ async def selected(
         deletable_dirs=deletable_dirs,
         rc_analysis=rc_analysis,
         distribution_tasks=tasks,
+        announce_disable_message=announce_msg,
     )
 
 
@@ -140,9 +154,7 @@ async def _get_page_data(
     async with db.session() as data:
         via = sql.validate_instrumented_attribute
         release = await data.release(
-            project_name=project_name,
-            version=version_name,
-            _committee=True,
+            project_name=project_name, version=version_name, _committee=True, _release_policy=True, _distributions=True
         ).demand(base.ASFQuartException("Release does not exist", errorcode=404))
         tasks = [
             t
@@ -343,6 +355,7 @@ async def _render_page(
     deletable_dirs: list[tuple[str, str]],
     rc_analysis: RCTagAnalysisResult,
     distribution_tasks: Sequence[sql.Task],
+    announce_disable_message: str,
 ) -> str:
     """Render the finish page using htm.py."""
     page = htm.Block()
@@ -363,8 +376,9 @@ async def _render_page(
     ]
 
     # Release info card
-    page.append(_render_release_card(release))
+    page.append(_render_release_card(release, announce_disable_message))
 
+    page.h2["Distributions"]
     # Information paragraph
     page.p[
         "During this phase you should distribute release artifacts to your package distribution networks "
@@ -481,8 +495,11 @@ def _render_rc_tags_section(rc_analysis: RCTagAnalysisResult) -> htm.Element:
     return section.collect()
 
 
-def _render_release_card(release: sql.Release) -> htm.Element:
+def _render_release_card(release: sql.Release, announce_disable_message: str) -> htm.Element:
     """Render the release information card."""
+    announce_classes = ".btn-success"
+    if announce_disable_message:
+        announce_classes += ".disabled"
     card = htm.div(".card.mb-4.shadow-sm", id=release.name)[
         htm.div(".card-header.bg-light")[htm.h3(".card-title.mb-0")["About this release preview"]],
         htm.div(".card-body")[
@@ -528,17 +545,20 @@ def _render_release_card(release: sql.Release) -> htm.Element:
                     " Show revisions",
                 ],
                 htm.a(
-                    ".btn.btn-success",
+                    f".btn{announce_classes}.me-2",
                     title=f"Announce and distribute {release.name}",
                     href=util.as_url(
                         announce.selected,
                         project_name=release.project.name,
                         version_name=release.version,
-                    ),
+                    )
+                    if not announce_disable_message
+                    else None,
                 )[
                     htm.icon("check-circle"),
                     " Announce and distribute",
                 ],
+                htm.span(".page-preview-meta-item.page-extra-muted")[f"{announce_disable_message}"],
             ],
         ],
     ]
