@@ -64,6 +64,19 @@ def get_short_commit_hash(project_root_path: str) -> str:
         return "00000000"
 
 
+def include_object(
+    object: object,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to: object | None,
+) -> bool:
+    """Exclude Litestream internal tables from autogenerate and check."""
+    if (type_ == "table") and name in {"_litestream_seq", "_litestream_lock"}:
+        return False
+    return True
+
+
 def process_revision_directives_custom_naming(
     context: migration.MigrationContext,
     revision: str | Iterable[str | None] | Iterable[str],
@@ -127,6 +140,7 @@ def run_migrations_offline() -> None:
         render_item=render_item_override,
         process_revision_directives=process_revision_directives_custom_naming,
         render_as_batch=True,
+        include_object=include_object,
     )
 
     with alembic.context.begin_transaction():
@@ -151,6 +165,7 @@ def run_migrations_online() -> None:
             render_item=render_item_override,
             process_revision_directives=process_revision_directives_custom_naming,
             render_as_batch=True,
+            include_object=include_object,
         )
 
         with alembic.context.begin_transaction():
