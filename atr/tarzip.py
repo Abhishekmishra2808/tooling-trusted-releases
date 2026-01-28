@@ -111,24 +111,27 @@ class ArchiveContext[ArchiveT: (tarfile.TarFile, zipfile.ZipFile)]:
 
     def __iter__(self) -> Iterator[TarMember | ZipMember]:
         count = 0
+        enforce_limit = self._max_members > 0
         match self._archive_obj:
             case tarfile.TarFile() as tf:
                 for member_orig in tf:
                     if member_orig.isdev():
                         continue
-                    count += 1
-                    if count > self._max_members:
-                        raise ArchiveMemberLimitExceededError(
-                            f"Archive contains too many members: exceeded limit of {self._max_members}"
-                        )
+                    if enforce_limit:
+                        count += 1
+                        if count > self._max_members:
+                            raise ArchiveMemberLimitExceededError(
+                                f"Archive contains too many members: exceeded limit of {self._max_members}"
+                            )
                     yield TarMember(member_orig)
             case zipfile.ZipFile() as zf:
                 for member_orig in zf.infolist():
-                    count += 1
-                    if count > self._max_members:
-                        raise ArchiveMemberLimitExceededError(
-                            f"Archive contains too many members: exceeded limit of {self._max_members}"
-                        )
+                    if enforce_limit:
+                        count += 1
+                        if count > self._max_members:
+                            raise ArchiveMemberLimitExceededError(
+                                f"Archive contains too many members: exceeded limit of {self._max_members}"
+                            )
                     yield ZipMember(member_orig)
 
     def extractfile(self, member_wrapper: Member) -> IO[bytes] | None:

@@ -221,27 +221,35 @@ def _files_check_core_logic(artifact_path: str, is_podling: bool) -> Iterator[Re
     disclaimer_found = False
 
     # Check for license files in the root directory
-    with tarzip.open_archive(artifact_path) as archive:
-        for member in archive:
-            if member.name and member.name.split("/")[-1].startswith("._"):
-                # Metadata convention
-                continue
+    try:
+        with tarzip.open_archive(artifact_path) as archive:
+            for member in archive:
+                if member.name and member.name.split("/")[-1].startswith("._"):
+                    # Metadata convention
+                    continue
 
-            if member.name.count("/") > 1:
-                # Skip files in subdirectories
-                continue
+                if member.name.count("/") > 1:
+                    # Skip files in subdirectories
+                    continue
 
-            filename = os.path.basename(member.name)
-            if filename == "LICENSE":
-                # TODO: Check length, should be 11,358 bytes
-                license_diff = _files_check_core_logic_license(archive, member)
-                license_results[filename] = license_diff
-            elif filename == "NOTICE":
-                # TODO: Check length doesn't exceed some preset
-                notice_ok, notice_issues, notice_preamble = _files_check_core_logic_notice(archive, member)
-                notice_results[filename] = (notice_ok, notice_issues, notice_preamble)
-            elif filename in {"DISCLAIMER", "DISCLAIMER-WIP"}:
-                disclaimer_found = True
+                filename = os.path.basename(member.name)
+                if filename == "LICENSE":
+                    # TODO: Check length, should be 11,358 bytes
+                    license_diff = _files_check_core_logic_license(archive, member)
+                    license_results[filename] = license_diff
+                elif filename == "NOTICE":
+                    # TODO: Check length doesn't exceed some preset
+                    notice_ok, notice_issues, notice_preamble = _files_check_core_logic_notice(archive, member)
+                    notice_results[filename] = (notice_ok, notice_issues, notice_preamble)
+                elif filename in {"DISCLAIMER", "DISCLAIMER-WIP"}:
+                    disclaimer_found = True
+    except tarzip.ArchiveMemberLimitExceededError as e:
+        yield ArtifactResult(
+            status=sql.CheckResultStatus.FAILURE,
+            message=f"Archive has too many members: {e}",
+            data={"error": str(e)},
+        )
+        return
 
     yield from _license_results(license_results)
     yield from _notice_results(notice_results)
@@ -320,7 +328,7 @@ def _get_file_extension(filename: str) -> str | None:
     return ext[1:].lower()
 
 
-def _headers_check_core_logic(artifact_path: str, ignore_lines: list[str], excludes_source: str) -> Iterator[Result]:
+def _headers_check_core_logic(artifact_path: str, ignore_lines: list[str], excludes_source: str) -> Iterator[Result]:  # noqa: C901
     """Verify Apache License headers in source files within an archive."""
     # We could modify @Lucas-C/pre-commit-hooks instead for this
     # But hopefully this will be robust enough, at least for testing
@@ -341,34 +349,42 @@ def _headers_check_core_logic(artifact_path: str, ignore_lines: list[str], exclu
     # log.info(f"Ignore lines: {ignore_lines}")
 
     # Check files in the archive
-    with tarzip.open_archive(artifact_path) as archive:
-        for member in archive:
-            if member.name and member.name.split("/")[-1].startswith("._"):
-                # Metadata convention
-                continue
+    try:
+        with tarzip.open_archive(artifact_path) as archive:
+            for member in archive:
+                if member.name and member.name.split("/")[-1].startswith("._"):
+                    # Metadata convention
+                    continue
 
-            ignore_path = "/" + artifact_basename + "/" + member.name.lstrip("/")
-            matcher = util.create_path_matcher(ignore_lines, pathlib.Path(ignore_path), pathlib.Path("/"))
-            # log.info(f"Checking {ignore_path} with matcher {matcher}")
-            if matcher(ignore_path):
-                # log.info(f"Skipping {ignore_path} because it matches the ignore list")
-                continue
+                ignore_path = "/" + artifact_basename + "/" + member.name.lstrip("/")
+                matcher = util.create_path_matcher(ignore_lines, pathlib.Path(ignore_path), pathlib.Path("/"))
+                # log.info(f"Checking {ignore_path} with matcher {matcher}")
+                if matcher(ignore_path):
+                    # log.info(f"Skipping {ignore_path} because it matches the ignore list")
+                    continue
 
-            match _headers_check_core_logic_process_file(archive, member):
-                case ArtifactResult() | MemberResult() as result:
-                    artifact_data.files_checked += 1
-                    match result.status:
-                        case sql.CheckResultStatus.SUCCESS:
-                            artifact_data.files_with_valid_headers += 1
-                        case sql.CheckResultStatus.FAILURE:
-                            artifact_data.files_with_invalid_headers += 1
-                        case sql.CheckResultStatus.WARNING:
-                            artifact_data.files_with_invalid_headers += 1
-                        case sql.CheckResultStatus.EXCEPTION:
-                            artifact_data.files_with_invalid_headers += 1
-                    yield result
-                case MemberSkippedResult():
-                    artifact_data.files_skipped += 1
+                match _headers_check_core_logic_process_file(archive, member):
+                    case ArtifactResult() | MemberResult() as result:
+                        artifact_data.files_checked += 1
+                        match result.status:
+                            case sql.CheckResultStatus.SUCCESS:
+                                artifact_data.files_with_valid_headers += 1
+                            case sql.CheckResultStatus.FAILURE:
+                                artifact_data.files_with_invalid_headers += 1
+                            case sql.CheckResultStatus.WARNING:
+                                artifact_data.files_with_invalid_headers += 1
+                            case sql.CheckResultStatus.EXCEPTION:
+                                artifact_data.files_with_invalid_headers += 1
+                        yield result
+                    case MemberSkippedResult():
+                        artifact_data.files_skipped += 1
+    except tarzip.ArchiveMemberLimitExceededError as e:
+        yield ArtifactResult(
+            status=sql.CheckResultStatus.FAILURE,
+            message=f"Archive has too many members: {e}",
+            data={"error": str(e)},
+        )
+        return
 
     yield ArtifactResult(
         status=sql.CheckResultStatus.SUCCESS,

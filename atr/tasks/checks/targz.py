@@ -43,6 +43,8 @@ async def integrity(args: checks.FunctionArguments) -> results.Results | None:
     try:
         size = await asyncio.to_thread(archives.total_size, str(artifact_abs_path), chunk_size)
         await recorder.success("Able to read all entries of the archive using tarfile", {"size": size})
+    except tarzip.ArchiveMemberLimitExceededError as e:
+        await recorder.failure(f"Archive has too many members: {e}", {"error": str(e)})
     except Exception as e:
         await recorder.failure("Unable to read all entries of the archive using tarfile", {"error": str(e)})
     return None
@@ -99,6 +101,8 @@ async def structure(args: checks.FunctionArguments) -> results.Results | None:
                 f"Root directory '{root}' does not match expected name '{expected_root}'",
                 {"root": root, "expected": expected_root},
             )
+    except tarzip.ArchiveMemberLimitExceededError as e:
+        await recorder.failure(f"Archive has too many members: {e}", {"error": str(e)})
     except RootDirectoryError as e:
         await recorder.warning("Could not get the root directory of the archive", {"error": str(e)})
     except Exception as e:
