@@ -35,6 +35,7 @@ import htpy
 import ldap3.utils.conv as conv
 import pydantic
 import quart
+import sqlalchemy
 import sqlalchemy.orm as orm
 import sqlmodel
 
@@ -727,11 +728,22 @@ async def tasks_recent(session: web.Committer, minutes: int) -> str:
         minutes = 1440
 
     via = sql.validate_instrumented_attribute
-    cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(minutes=minutes)
+    now = datetime.datetime.now(datetime.UTC)
+    cutoff = now - datetime.timedelta(minutes=minutes)
 
     async with db.session() as data:
-        statement = sqlmodel.select(sql.Task).where(via(sql.Task.added) >= cutoff).order_by(via(sql.Task.added).desc())
+        statement = (
+            sqlmodel.select(sql.Task)
+            .where(via(sql.Task.added) >= cutoff, sqlalchemy.not_(via(sql.Task.scheduled) > now))
+            .order_by(via(sql.Task.added).desc())
+        )
         recent_tasks = (await data.execute(statement)).scalars().all()
+        scheduled_stmt = (
+            sqlmodel.select(sql.Task)
+            .where(via(sql.Task.scheduled) > now, via(sql.Task.status) == sql.TaskStatus.QUEUED)
+            .order_by(via(sql.Task.scheduled).asc())
+        )
+        scheduled_tasks = (await data.execute(scheduled_stmt)).scalars().all()
 
     page = htm.Block()
     page.h1[f"Tasks from the last {util.plural(minutes, 'minute')}"]
@@ -777,6 +789,38 @@ async def tasks_recent(session: web.Committer, minutes: int) -> str:
                     htpy.td[task.version_name or ""],
                     htpy.td[task.revision_number or ""],
                     htpy.td[error_text],
+                ]
+            )
+        table.append(tbody.collect())
+        page.append(table.collect())
+
+    page.h2["Scheduled tasks"]
+    page.p[f"Found {util.plural(len(scheduled_tasks), 'task')}"]
+
+    if recent_tasks:
+        table = htm.Block(htpy.table, classes=".table.table-sm")
+        table.thead(".table-dark")[
+            htpy.tr[
+                htpy.th["ID"],
+                htpy.th["Type"],
+                htpy.th["Added"],
+                htpy.th["Scheduled"],
+                htpy.th["Project"],
+                htpy.th["Version"],
+                htpy.th["Revision"],
+            ]
+        ]
+        tbody = htm.Block(htpy.tbody)
+        for task in scheduled_tasks:
+            tbody.append(
+                htpy.tr(".table-secondary")[
+                    htpy.td[str(task.id)],
+                    htpy.td[task.task_type.value],
+                    htpy.td[task.added.strftime("%Y-%m-%d %H:%M:%S") if task.added else ""],
+                    htpy.td[task.scheduled.strftime("%Y-%m-%d %H:%M:%S") if task.scheduled else ""],
+                    htpy.td[task.project_name or ""],
+                    htpy.td[task.version_name or ""],
+                    htpy.td[task.revision_number or ""],
                 ]
             )
         table.append(tbody.collect())
