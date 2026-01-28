@@ -139,7 +139,7 @@ class CommitteeMember(CommitteeParticipant):
         if policy and policy.file_tag_mappings:
             missing = []
             tags = policy.file_tag_mappings.keys()
-            distributions = [d.platform.value.gh_slug for d in release.distributions]
+            distributions = [d.platform.value.gh_slug for d in release.distributions if (not d.staging)]
             for tag in tags:
                 if tag not in distributions:
                     missing.append(tag)
