@@ -413,6 +413,40 @@ def _app_setup_request_lifecycle(app: base.QuartApp) -> None:
     async def bind_request_context_vars() -> None:
         await _reset_request_log_context()
 
+    @app.before_request
+    async def validate_session_lifetime() -> None:
+        """Enforce absolute maximum session lifetime per ASVS 7.3.2."""
+        session = await asfquart.session.read()
+        if session is None:
+            return
+
+        conf = config.get()
+        max_lifetime_seconds = conf.ABSOLUTE_SESSION_MAX_SECONDS
+        max_lifetime = datetime.timedelta(seconds=max_lifetime_seconds)
+
+        # Check if session has a creation timestamp in metadata
+        created_at_str = session.metadata.get("created_at")
+
+        if created_at_str is None:
+            # First time seeing this session, record creation time
+            session.metadata["created_at"] = datetime.datetime.now(datetime.UTC).isoformat()
+            asfquart.session.write(session)
+            return
+
+        # Parse the creation timestamp and check session age
+        try:
+            created_at = datetime.datetime.fromisoformat(created_at_str)
+        except (ValueError, TypeError):
+            # Invalid timestamp, treat as expired
+            asfquart.session.clear()
+            raise base.ASFQuartException("Session expired", errorcode=401)
+
+        session_age = datetime.datetime.now(datetime.UTC) - created_at
+
+        if session_age > max_lifetime:
+            asfquart.session.clear()
+            raise base.ASFQuartException("Session expired", errorcode=401)
+
     @app.after_request
     async def log_request(response: quart.Response) -> quart.Response:
         logger.info(
