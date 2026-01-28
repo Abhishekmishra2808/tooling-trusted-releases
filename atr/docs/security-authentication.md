@@ -53,7 +53,7 @@ Sessions are stored server-side. The browser receives only a session cookie that
 * `Secure` - cookie is only sent over HTTPS
 * `SameSite=Strict` - provides CSRF protection for most requests
 
-Session data includes the user's ASF UID and is used to authorize requests. The session expires after a period of inactivity or when the user logs out.
+Session data includes the user's ASF UID and is used to authorize requests. The session expires after a configured maximum lifetime (default 72 hours), a period of inactivity, or when the user logs out.
 
 ### Session caching
 
@@ -67,12 +67,14 @@ API access uses a two-token system: Personal Access Tokens (PATs) for long-term 
 
 Committers can obtain PATs from the `/tokens` page on the ATR website. PATs have the following properties:
 
-* **Validity**: 180 days from creation
+* **Validity**: 180 days from creation, while LDAP account is still active
 * **Storage**: ATR stores only SHA3-256 hashes, never the plaintext PAT
 * **Revocation**: Users can revoke their own PATs at any time; admins can revoke any PAT
 * **Purpose**: PATs are used solely to obtain JWTs; they cannot be used directly for API access
 
 Only authenticated committers (signed in via ASF OAuth) can create PATs. Each user can have multiple active PATs.
+
+PATs are rejected if the user who created them has been removed from LDAP.
 
 ### JSON Web Tokens (JWTs)
 
