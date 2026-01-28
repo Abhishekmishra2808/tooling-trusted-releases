@@ -30,11 +30,10 @@ import atr.log as log
 import atr.models.results as results
 import atr.models.schema as schema
 import atr.models.sql as sql
-
-# import atr.shared as shared
 import atr.storage as storage
 import atr.tasks as tasks
 import atr.tasks.checks as checks
+import atr.util as util
 from atr.models.results import DistributionWorkflowStatus
 
 _BASE_URL: Final[str] = "https://api.github.com/repos"
@@ -95,7 +94,7 @@ async def trigger_workflow(args: DistributionWorkflow, *, task_id: int | None = 
             json.dumps(args.arguments, indent=2)
         }"
     )
-    async with aiohttp.ClientSession() as session:
+    async with util.create_secure_session() as session:
         try:
             async with session.post(
                 f"{_BASE_URL}/apache/tooling-actions/actions/workflows/{workflow}/dispatches",
@@ -130,7 +129,7 @@ async def status_check(args: WorkflowStatusCheck) -> DistributionWorkflowStatus:
     log.info("Updating Github workflow statuses from apache/tooling-actions")
     runs = []
     try:
-        async with aiohttp.ClientSession() as session:
+        async with util.create_secure_session() as session:
             try:
                 async with session.get(
                     f"{_BASE_URL}/apache/tooling-actions/actions/runs?event=workflow_dispatch", headers=headers

@@ -104,7 +104,7 @@ def verify(token: str) -> dict[str, Any]:
 
 async def verify_github_oidc(token: str) -> dict[str, Any]:
     try:
-        async with await util.create_secure_session() as session:
+        async with util.create_secure_session() as session:
             r = await session.get(
                 f"{_GITHUB_OIDC_ISSUER}/.well-known/openid-configuration",
                 timeout=aiohttp.ClientTimeout(total=10),

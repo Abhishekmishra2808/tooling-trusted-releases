@@ -73,7 +73,7 @@ class TestCreateSecureSession(unittest.IsolatedAsyncioTestCase):
 
     async def test_creates_client_session(self) -> None:
         """Test that create_secure_session returns an aiohttp.ClientSession."""
-        session = await util.create_secure_session()
+        session = util.create_secure_session()
         try:
             self.assertIsInstance(session, aiohttp.ClientSession)
         finally:
@@ -81,7 +81,7 @@ class TestCreateSecureSession(unittest.IsolatedAsyncioTestCase):
 
     async def test_session_has_tcp_connector(self) -> None:
         """Test that session is initialized with a TCPConnector."""
-        session = await util.create_secure_session()
+        session = util.create_secure_session()
         try:
             self.assertIsNotNone(session.connector)
             self.assertIsInstance(session.connector, aiohttp.TCPConnector)
@@ -90,7 +90,7 @@ class TestCreateSecureSession(unittest.IsolatedAsyncioTestCase):
 
     async def test_connector_has_secure_ssl_context(self) -> None:
         """Test that TCPConnector uses the secure SSL context."""
-        session = await util.create_secure_session()
+        session = util.create_secure_session()
         try:
             connector = session.connector
             self.assertIsNotNone(connector)
@@ -99,7 +99,7 @@ class TestCreateSecureSession(unittest.IsolatedAsyncioTestCase):
             # Verify the connector was initialized with SSL context
             # The ssl attribute on TCPConnector will be the ssl.SSLContext
             if hasattr(connector, "_ssl"):
-                ssl_context = connector._ssl
+                ssl_context = getattr(connector, "_ssl")
                 self.assertIsNotNone(ssl_context)
                 if isinstance(ssl_context, ssl.SSLContext):
                     self.assertTrue(ssl_context.check_hostname)
@@ -111,7 +111,7 @@ class TestCreateSecureSession(unittest.IsolatedAsyncioTestCase):
     async def test_session_accepts_optional_timeout(self) -> None:
         """Test that create_secure_session accepts optional timeout parameter."""
         timeout = aiohttp.ClientTimeout(total=30)
-        session = await util.create_secure_session(timeout=timeout)
+        session = util.create_secure_session(timeout=timeout)
         try:
             self.assertIsNotNone(session.timeout)
             self.assertEqual(session.timeout.total, 30)
@@ -120,7 +120,7 @@ class TestCreateSecureSession(unittest.IsolatedAsyncioTestCase):
 
     async def test_session_without_timeout(self) -> None:
         """Test that create_secure_session works without explicit timeout."""
-        session = await util.create_secure_session()
+        session = util.create_secure_session()
         try:
             self.assertIsNotNone(session)
             self.assertIsInstance(session, aiohttp.ClientSession)
@@ -129,8 +129,8 @@ class TestCreateSecureSession(unittest.IsolatedAsyncioTestCase):
 
     async def test_multiple_sessions_have_independent_contexts(self) -> None:
         """Test that multiple sessions each have their own SSL context."""
-        session1 = await util.create_secure_session()
-        session2 = await util.create_secure_session()
+        session1 = util.create_secure_session()
+        session2 = util.create_secure_session()
         try:
             # Both sessions should be valid and independent
             self.assertIsInstance(session1, aiohttp.ClientSession)

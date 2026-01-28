@@ -75,7 +75,7 @@ async def bundle_to_ntia_patch(bundle_value: models.bundle.Bundle) -> models.pat
     from .conformance import ntia_2021_issues, ntia_2021_patch
 
     _warnings, errors = ntia_2021_issues(bundle_value.bom)
-    async with await util.create_secure_session() as session:
+    async with util.create_secure_session() as session:
         patch_ops = await ntia_2021_patch(session, bundle_value.doc, errors)
     return patch_ops
 

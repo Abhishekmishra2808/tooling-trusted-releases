@@ -90,38 +90,6 @@ class FetchError(RuntimeError):
         self.url = url
 
 
-def create_secure_ssl_context() -> ssl.SSLContext:
-    """Create a secure SSL context compliant with ASVS 9.1.1 and 9.1.2.
-
-    Explicitly configures:
-    - check_hostname = True: Verifies hostname matches the certificate
-    - verify_mode = ssl.CERT_REQUIRED: Requires a valid certificate
-    - minimum_version = ssl.TLSVersion.TLSv1_2: Enforces TLS 1.2 or higher
-    """
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = True
-    ctx.verify_mode = ssl.CERT_REQUIRED
-    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-    return ctx
-
-
-async def create_secure_session(
-    timeout: aiohttp.ClientTimeout | None = None,  # noqa: ASYNC109
-) -> aiohttp.ClientSession:
-    """Create a secure aiohttp.ClientSession with hardened SSL/TLS configuration.
-
-    Returns a ClientSession with TCPConnector using the secure SSL context.
-    This ensures all HTTP connections made through this session use secure TLS settings.
-
-    Args:
-        timeout: Optional ClientTimeout object for request timeouts.
-                 Provided for backward compatibility with existing call sites (ASVS 9.1.1, 9.1.2).
-    """
-    connector = aiohttp.TCPConnector(ssl=create_secure_ssl_context())
-    # We pass the timeout to the ClientSession constructor
-    return aiohttp.ClientSession(connector=connector, timeout=timeout)
-
-
 async def archive_listing(file_path: pathlib.Path) -> list[str] | None:
     """Attempt to list contents of supported archive files."""
     if not await aiofiles.os.path.isfile(file_path):
@@ -340,6 +308,30 @@ def create_path_matcher(lines: Iterable[str], full_path: pathlib.Path, base_dir:
     return lambda file_path: gitignore_parser.handle_negation(file_path, rules)
 
 
+def create_secure_session(
+    timeout: aiohttp.ClientTimeout | None = None,
+) -> aiohttp.ClientSession:
+    """Create a secure aiohttp.ClientSession with hardened SSL/TLS configuration."""
+    connector = aiohttp.TCPConnector(ssl=create_secure_ssl_context())
+    # We pass the timeout to the ClientSession constructor
+    return aiohttp.ClientSession(connector=connector, timeout=timeout)
+
+
+def create_secure_ssl_context() -> ssl.SSLContext:
+    """Create a secure SSL context compliant with ASVS 9.1.1 and 9.1.2."""
+    # These are the default values in Python 3.13.3:
+    # >>> import ssl
+    # >>> ctx = ssl.create_default_context()
+    # >>> (ctx.check_hostname, ctx.verify_mode, ctx.minimum_version)
+    # (True, <VerifyMode.CERT_REQUIRED: 2>, <TLSVersion.TLSv1_2: 771>)
+    # But we set them explicitly to pin and document them
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = True
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+    return ctx
+
+
 def email_from_uid(uid: str) -> str | None:
     if m := re.search(r"<([^>]+)>", uid):
         return m.group(1).lower()
@@ -542,7 +534,7 @@ def get_upload_staging_dir(session_token: str) -> pathlib.Path:
 
 async def get_urls_as_completed(urls: Sequence[str]) -> AsyncGenerator[tuple[str, int | str | None, bytes]]:
     """GET a list of URLs in parallel and yield (url, status, content_bytes) as they become available."""
-    async with aiohttp.ClientSession() as session:
+    async with create_secure_session() as session:
 
         async def _fetch(one_url: str) -> tuple[str, int | str | None, bytes]:
             try:
@@ -902,7 +894,7 @@ async def task_archive_url(task_mid: str, recipient: str | None = None) -> str |
     lid = recipient_address.replace("@", ".")
     url = f"https://lists.apache.org/api/email.json?id=%3C{task_mid}%3E&listid=%3C{lid}%3E"
     try:
-        async with aiohttp.ClientSession() as session:
+        async with create_secure_session() as session:
             async with session.get(url) as response:
                 response.raise_for_status()
                 # TODO: Check whether this blocks from network
@@ -924,7 +916,7 @@ async def thread_messages(
     thread_url = f"https://lists.apache.org/api/thread.json?id={thread_id}"
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with create_secure_session() as session:
             async with session.get(thread_url) as resp:
                 resp.raise_for_status()
                 thread_data: Any = await resp.json(content_type=None)

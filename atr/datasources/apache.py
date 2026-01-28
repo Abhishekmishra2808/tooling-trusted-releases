@@ -224,7 +224,7 @@ class ProjectsData(helpers.DictRoot[ProjectStatus]):
 async def get_active_committee_data() -> CommitteeData:
     """Returns the list of currently active committees."""
 
-    async with await util.create_secure_session() as session:
+    async with util.create_secure_session() as session:
         async with session.get(_WHIMSY_COMMITTEE_INFO_URL) as response:
             response.raise_for_status()
             data = await response.json()
@@ -235,7 +235,7 @@ async def get_active_committee_data() -> CommitteeData:
 async def get_current_podlings_data() -> PodlingsData:
     """Returns the list of current podlings."""
 
-    async with await util.create_secure_session() as session:
+    async with util.create_secure_session() as session:
         async with session.get(_PROJECTS_PODLINGS_URL) as response:
             response.raise_for_status()
             data = await response.json()
@@ -245,7 +245,7 @@ async def get_current_podlings_data() -> PodlingsData:
 async def get_groups_data() -> GroupsData:
     """Returns LDAP Groups with their members."""
 
-    async with await util.create_secure_session() as session:
+    async with util.create_secure_session() as session:
         async with session.get(_PROJECTS_GROUPS_URL) as response:
             response.raise_for_status()
             data = await response.json()
@@ -253,7 +253,7 @@ async def get_groups_data() -> GroupsData:
 
 
 async def get_ldap_projects_data() -> LDAPProjectsData:
-    async with await util.create_secure_session() as session:
+    async with util.create_secure_session() as session:
         async with session.get(_WHIMSY_PROJECTS_URL) as response:
             response.raise_for_status()
             data = await response.json()
@@ -264,7 +264,7 @@ async def get_ldap_projects_data() -> LDAPProjectsData:
 async def get_projects_data() -> ProjectsData:
     """Returns the list of projects."""
 
-    async with await util.create_secure_session() as session:
+    async with util.create_secure_session() as session:
         async with session.get(_PROJECTS_PROJECTS_URL) as response:
             response.raise_for_status()
             data = await response.json()
@@ -274,7 +274,7 @@ async def get_projects_data() -> ProjectsData:
 async def get_retired_committee_data() -> RetiredCommitteeData:
     """Returns the list of retired committees."""
 
-    async with await util.create_secure_session() as session:
+    async with util.create_secure_session() as session:
         async with session.get(_WHIMSY_COMMITTEE_RETIRED_URL) as response:
             response.raise_for_status()
             data = await response.json()
