@@ -347,6 +347,9 @@ def _app_setup_logging(app: base.QuartApp, config_mode: config.Mode, app_config:
         handlers=[log.StructlogQueueHandler(log_queue)],
         force=True,
     )
+    # Silence noisy dependency loggers even in DEBUG
+    logging.getLogger("aiosqlite").setLevel(logging.INFO)
+    logging.getLogger("hpack.hpack").setLevel(logging.INFO)
 
     loggers.configure_structlog(shared_processors)
 

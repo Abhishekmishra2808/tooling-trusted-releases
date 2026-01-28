@@ -266,6 +266,10 @@ class AuthoriserASFQuart:
 
         committees = frozenset(asfquart_session.committees)
         projects = frozenset(asfquart_session.projects)
+        if "tooling" in projects:
+            # Tooling project members are actually Tooling committee members
+            # This is a special case, and reflects a similar special case in LDAP
+            committees = committees.union({"tooling"})
         committees, projects = _augment_test_membership(committees, projects)
 
         # We do not check that the ASF UID is the same as the one in the session
