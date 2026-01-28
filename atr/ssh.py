@@ -318,7 +318,9 @@ async def _step_04_command_validate(
             # Projects are public, so existence information is public
             raise RsyncArgsError(f"Project '{path_project}' does not exist")
 
-        release = await data.release(project_name=project.name, version=path_version, _release_policy=True).get()
+        release = await data.release(
+            project_name=project.name, version=path_version, _project_release_policy=True
+        ).get()
 
     if is_read_request:
         #################################################
@@ -450,14 +452,14 @@ async def _step_06a_validate_read_permissions(
         )
 
     if tag:
-        if not release.release_policy or (not release.release_policy.file_tag_mappings):
+        if not release.project.release_policy or (not release.project.release_policy.file_tag_mappings):
             raise RsyncArgsError(f"Release '{release.name}' does not support tags")
-        tags = release.release_policy.file_tag_mappings.keys()
+        tags = release.project.release_policy.file_tag_mappings.keys()
         if tag not in tags:
             raise RsyncArgsError(f"Tag '{tag}' is not allowed for release '{release.name}'")
-        if ".." in "".join(release.release_policy.file_tag_mappings[tag]):
+        if ".." in "".join(release.project.release_policy.file_tag_mappings[tag]):
             raise RsyncArgsError(f"Tag '{tag}' is misconfigured for release '{release.name}'")
-        return release, release.release_policy.file_tag_mappings[tag]
+        return release, release.project.release_policy.file_tag_mappings[tag]
     return release, None
 
 
