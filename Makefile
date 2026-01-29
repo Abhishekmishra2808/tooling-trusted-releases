@@ -66,12 +66,6 @@ check-light:
 	git add -A
 	uv run --frozen pre-commit run --all-files --config .pre-commit-light.yaml
 
-commit:
-	git add -A
-	git commit
-	git pull
-	git push
-
 docs:
 	mkdir -p docs
 	uv run --frozen python3 scripts/docs_check.py
